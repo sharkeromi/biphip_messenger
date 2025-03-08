@@ -56,8 +56,6 @@ class GlobalController extends GetxController {
     tapAbleButtonState.addAll([true, false, false]);
   }
 
-
-
   //* info:: show loading
   final isLoading = RxBool(false);
 
@@ -95,11 +93,7 @@ class GlobalController extends GetxController {
     );
   }
 
-  void showSnackBar(
-      {required String title,
-      required String message,
-      required Color color,
-      duration}) {
+  void showSnackBar({required String title, required String message, required Color color, duration}) {
     Get.snackbar(
       title,
       message,
@@ -133,9 +127,7 @@ class GlobalController extends GetxController {
       isDismissible: isDismissible ?? true,
       isScrollControlled: isScrollControlled ?? false,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(k16BorderRadius),
-            topRight: Radius.circular(k16BorderRadius)),
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(k16BorderRadius), topRight: Radius.circular(k16BorderRadius)),
       ),
       context: context,
       builder: (BuildContext context) {
@@ -144,17 +136,10 @@ class GlobalController extends GetxController {
           children: [
             Container(
               decoration: const BoxDecoration(
-                  borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(k16BorderRadius),
-                      topRight: Radius.circular(k16BorderRadius)),
-                  color: cWhiteColor),
+                  borderRadius: BorderRadius.only(topLeft: Radius.circular(k16BorderRadius), topRight: Radius.circular(k16BorderRadius)), color: cWhiteColor),
               width: width,
-              height: MediaQuery.of(context).viewInsets.bottom > 0.0
-                  ? height * .9
-                  : bottomSheetHeight ?? height * .5,
-              constraints: BoxConstraints(
-                  minHeight: bottomSheetHeight ?? height * .5,
-                  maxHeight: height * .9),
+              height: MediaQuery.of(context).viewInsets.bottom > 0.0 ? height * .9 : bottomSheetHeight ?? height * .5,
+              constraints: BoxConstraints(minHeight: bottomSheetHeight ?? height * .5, maxHeight: height * .9),
               child: Column(
                 children: [
                   kH4sizedBox,
@@ -172,24 +157,21 @@ class GlobalController extends GetxController {
                   ),
                   if (isSearchShow == true)
                     Padding(
-                      padding: const EdgeInsets.only(
-                          left: k16Padding, right: k16Padding, top: k16Padding),
+                      padding: const EdgeInsets.only(left: k16Padding, right: k16Padding, top: k16Padding),
                       child: CustomModifiedTextField(
                         borderRadius: h8,
                         controller: searchController,
                         prefixIcon: BipHip.search,
                         suffixIcon: BipHip.voiceFill,
                         hint: ksSearch.tr,
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: k16Padding),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: k16Padding),
                         textInputStyle: regular16TextStyle(cBlackColor),
                       ),
                     ),
                   Expanded(
                     child: SingleChildScrollView(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: k16Padding, vertical: k8Padding),
+                        padding: const EdgeInsets.symmetric(horizontal: k16Padding, vertical: k8Padding),
                         child: content,
                       ),
                     ),
@@ -220,14 +202,10 @@ class GlobalController extends GetxController {
                 top: h20,
                 right: 10,
                 child: Obx(() => CustomTextButton(
-                      onPressed: isBottomSheetRightButtonActive!.value
-                          ? onPressRightButton
-                          : null,
+                      onPressed: isBottomSheetRightButtonActive!.value ? onPressRightButton : null,
                       icon: BipHip.circleCross,
                       text: rightText,
-                      textStyle: isBottomSheetRightButtonActive.value
-                          ? rightTextStyle
-                          : medium14TextStyle(cLineColor2),
+                      textStyle: isBottomSheetRightButtonActive.value ? rightTextStyle : medium14TextStyle(cLineColor2),
                     )),
               ),
           ],
@@ -235,10 +213,6 @@ class GlobalController extends GetxController {
       },
     );
   }
-
-
-
-
 
   void setKeyboardValue(value, keyValue) {
     keyValue.value = value;
@@ -254,9 +228,7 @@ class GlobalController extends GetxController {
     showModalBottomSheet<void>(
       isScrollControlled: isScrollControlled ?? false,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(k16BorderRadius),
-            topRight: Radius.circular(k16BorderRadius)),
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(k16BorderRadius), topRight: Radius.circular(k16BorderRadius)),
       ),
       context: context,
       builder: (BuildContext context) {
@@ -265,17 +237,10 @@ class GlobalController extends GetxController {
           children: [
             Container(
               decoration: const BoxDecoration(
-                  borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(k16BorderRadius),
-                      topRight: Radius.circular(k16BorderRadius)),
-                  color: cWhiteColor),
+                  borderRadius: BorderRadius.only(topLeft: Radius.circular(k16BorderRadius), topRight: Radius.circular(k16BorderRadius)), color: cWhiteColor),
               width: width,
-              height: MediaQuery.of(context).viewInsets.bottom > 0.0
-                  ? height * .9
-                  : bottomSheetHeight ?? height * .5,
-              constraints: BoxConstraints(
-                  minHeight: bottomSheetHeight ?? height * .5,
-                  maxHeight: height * .9),
+              height: MediaQuery.of(context).viewInsets.bottom > 0.0 ? height * .9 : bottomSheetHeight ?? height * .5,
+              constraints: BoxConstraints(minHeight: bottomSheetHeight ?? height * .5, maxHeight: height * .9),
               child: Column(
                 children: [
                   kH4sizedBox,
@@ -302,8 +267,6 @@ class GlobalController extends GetxController {
       },
     );
   }
-
-
 
   final searchController = TextEditingController();
   final recentSearch = RxList();
@@ -338,15 +301,16 @@ class GlobalController extends GetxController {
     }
   }
 
-    RxList<Map<String, dynamic>> allOnlineUsers =
-      RxList<Map<String, dynamic>>([]);
+  RxList<Map<String, dynamic>> allOnlineUsers = RxList<Map<String, dynamic>>([]);
   void populatePeerList(newUserData) {
+    //todo: for same user add restriction
     allOnlineUsers.add({"userID": newUserData});
 
     if (Get.find<MessengerController>().allRoomMessageList.isNotEmpty) {
       Get.find<MessengerController>().updateRoomListWithOnlineUsers();
     }
   }
+
   final RxDouble keyboardHeight = RxDouble(0.0);
   //! end
 }

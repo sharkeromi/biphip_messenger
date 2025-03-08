@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:biphip_messenger/controllers/auth/authentication_controller.dart';
 import 'package:biphip_messenger/controllers/common/global_controller.dart';
+import 'package:biphip_messenger/controllers/common/socket_controller.dart';
 import 'package:biphip_messenger/controllers/common/sp_controller.dart';
 import 'package:biphip_messenger/utils/constants/routes.dart';
 import 'package:get/get.dart';
-
 
 class SplashScreenController extends GetxController {
   final SpController spController = SpController();
@@ -33,18 +33,12 @@ class SplashScreenController extends GetxController {
       duration,
       () async {
         if (rememberStatus) {
+          SocketController().socketInit();
           await Get.find<GlobalController>().getUserInfo();
           Get.offAllNamed(krHome);
         } else {
-          await Get.find<GlobalController>().getUserInfo();
-          final AuthenticationController authenticationController = Get.find<AuthenticationController>();
-          await authenticationController.getSavedUsers();
-          if (authenticationController.users.isNotEmpty) {
-            Get.offAllNamed(krSavedUserLogin);
-          } else {
-            Get.find<AuthenticationController>().resetLoginScreen();
-            Get.offAllNamed(krLogin);
-          }
+          Get.find<AuthenticationController>().resetLoginScreen();
+          Get.offAllNamed(krLogin);
         }
       },
     );

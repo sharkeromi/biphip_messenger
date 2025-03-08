@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:biphip_messenger/controllers/common/api_controller.dart';
 import 'package:biphip_messenger/controllers/common/global_controller.dart';
+import 'package:biphip_messenger/controllers/common/socket_controller.dart';
 import 'package:biphip_messenger/controllers/common/sp_controller.dart';
 import 'package:biphip_messenger/models/auth/login_model.dart';
 import 'package:biphip_messenger/models/common/common_data_model.dart';
@@ -12,7 +13,6 @@ import 'package:biphip_messenger/utils/constants/strings.dart';
 import 'package:biphip_messenger/utils/constants/urls.dart';
 import 'package:get/get.dart';
 
-
 class AuthenticationController extends GetxController {
   final TextEditingController twoFactorTextfieldController = TextEditingController();
 
@@ -21,9 +21,9 @@ class AuthenticationController extends GetxController {
   final RxBool isProfileImageChanged = RxBool(false);
   final RxBool isImageUploadLoading = RxBool(false);
   final RxList users = RxList([]);
-  final RxBool isTwoFactorLoading =  RxBool(false);
-  final RxBool isDeleteAccountLoading =  RxBool(false);
-  final RxBool isDeactivateAccountLoading =  RxBool(false);
+  final RxBool isTwoFactorLoading = RxBool(false);
+  final RxBool isDeleteAccountLoading = RxBool(false);
+  final RxBool isDeactivateAccountLoading = RxBool(false);
   final ApiController apiController = ApiController();
   final SpController spController = SpController();
   final GlobalController globalController = Get.find<GlobalController>();
@@ -118,12 +118,12 @@ class AuthenticationController extends GetxController {
           });
         }
         await globalController.getUserInfo();
+        SocketController().socketInit();
         isLoginLoading.value = false;
         Get.offAllNamed(krHome);
         globalController.showSnackBar(title: ksSuccess.tr, message: response.message, color: cGreenColor, duration: 1000);
       } else {
         if (response.code == 410) {
-        
           globalController.showSnackBar(title: ksError.tr, message: response.message, color: cRedColor);
         } else {
           ErrorModel errorModel = ErrorModel.fromJson(response.data);
@@ -141,7 +141,6 @@ class AuthenticationController extends GetxController {
     }
   }
 
-  
   /*
   |--------------------------------------------------------------------------
   | //! info:: logout
