@@ -39,16 +39,9 @@ class MessengerController extends GetxController {
 
   @override
   void onClose() {
+    messageTextEditingController.clear();
     super.onClose();
   }
-
-  //=====================================================
-  //!          Check for internet connection
-  //=====================================================
-
-
-
-
 
   //=====================================================
 
@@ -63,10 +56,6 @@ class MessengerController extends GetxController {
   //============================================
   //!         Send Message Data Persistency
   //============================================
-
-  List<String> messageQueue = [];
-  int batchSize = 1;
-
 
   // Send through API
   final RxBool isSendMessageLoading = RxBool(false);
