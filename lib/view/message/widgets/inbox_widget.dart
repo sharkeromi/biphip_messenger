@@ -1,5 +1,5 @@
-
 import 'package:biphip_messenger/controllers/messenger/messenger_controller.dart';
+import 'package:biphip_messenger/models/messenger/room_list_model.dart';
 import 'package:biphip_messenger/utils/constants/imports.dart';
 import 'package:biphip_messenger/utils/constants/routes.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
@@ -21,6 +21,7 @@ class InboxContainer extends StatelessWidget {
     required this.index,
     required this.dataChannel,
     this.peerConnection,
+    required this.receiverData,
   });
   final String userName, userImage;
   final RxString message;
@@ -29,6 +30,7 @@ class InboxContainer extends StatelessWidget {
   final int userID, roomID, index;
   final DateTime lastMessageTime;
   final RTCDataChannel? dataChannel;
+  final RoomData receiverData;
   final RTCPeerConnection? peerConnection;
   final MessengerController messengerController = Get.find<MessengerController>();
 
@@ -36,7 +38,9 @@ class InboxContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () async {
-     
+        messengerController.selectedReceiver.value = receiverData;
+        messengerController.selectedRoomIndex.value = index;
+        await messengerController.connectUser(userID);
         Get.toNamed(krMessages);
         //* GET MESSAGE API CALL
         await messengerController.getMessageList(roomID);

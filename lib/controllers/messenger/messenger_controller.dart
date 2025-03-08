@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:biphip_messenger/controllers/common/api_controller.dart';
 import 'package:biphip_messenger/controllers/common/global_controller.dart';
+import 'package:biphip_messenger/controllers/common/socket_controller.dart';
 import 'package:biphip_messenger/controllers/common/sp_controller.dart';
 import 'package:biphip_messenger/models/common/common_data_model.dart';
 import 'package:biphip_messenger/models/common/common_error_model.dart';
@@ -10,6 +11,7 @@ import 'package:biphip_messenger/models/messenger/room_list_model.dart';
 import 'package:biphip_messenger/utils/constants/imports.dart';
 import 'package:biphip_messenger/utils/constants/strings.dart';
 import 'package:biphip_messenger/utils/constants/urls.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 
 class MessengerController extends GetxController {
@@ -42,8 +44,6 @@ class MessengerController extends GetxController {
     messageTextEditingController.clear();
     super.onClose();
   }
-
-  //=====================================================
 
   void checkCanSendMessage() {
     if (messageTextEditingController.text.trim() == "") {
@@ -84,6 +84,7 @@ class MessengerController extends GetxController {
 
   void updateRoomListWithOnlineUsers() {
     Map<int, Map<String, dynamic>> onlineUserMap = {for (var onlineUser in globalController.allOnlineUsers) onlineUser['userID']: onlineUser};
+    ll(onlineUserMap);
 
     for (var room in allRoomMessageList) {
       if (onlineUserMap.containsKey(room['userID'])) {
@@ -189,8 +190,6 @@ class MessengerController extends GetxController {
     }
   }
 
-
-
   //=====================================================
   //!          Check for internet connection
   //=====================================================
@@ -226,12 +225,73 @@ class MessengerController extends GetxController {
             isInternetConnectionAvailable.value = false;
             break;
           case InternetConnectionStatus.slow:
-           
             throw UnimplementedError();
         }
       },
     );
   }
 
-  //=====================================================
+  //*===================== WEB RTC FUNCTIONS ===============================*//
+  final Map<String, dynamic> configuration = {
+    'iceServers': [
+      {'urls': "stun:stun.l.google.com:19302"},
+      {
+        "urls": [
+          "turn:54.91.252.241:3478",
+        ],
+        "username": "user1",
+        "credential": "123456",
+      },
+    ],
+  };
+
+  Future<void> connectUser(userID) async {
+    RTCPeerConnection peerConnection = await createPeerConnection(configuration);
+    registerPeerConnectionListeners(peerConnection);
+
+    //Creating offer
+    RTCSessionDescription offer = await peerConnection.createOffer();
+    ll("OFFER CREATED");
+    await peerConnection.setLocalDescription(offer);
+    socket.emit('mobile-chat-peer-exchange-$userID', {'userID': Get.find<GlobalController>().userId.value, 'type': EmitType.offer.name, 'data': offer});
+  }
+
+  void registerPeerConnectionListeners(RTCPeerConnection? peerConnection, [data]) {
+    peerConnection?.onConnectionState = (RTCPeerConnectionState state) async {
+      ll('Connection state change: $state');
+      if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed) {
+        await peerConnection.restartIce();
+      }
+    };
+
+    peerConnection?.onSignalingState = (RTCSignalingState state) async {
+      ll('Signaling state change: $state');
+      if (state == RTCSignalingState.RTCSignalingStateHaveRemoteOffer) {
+        try {
+          var answer = await peerConnection.createAnswer();
+          ll('Created Answer $answer');
+          await peerConnection.setLocalDescription(answer);
+
+          socket.emit('mobile-chat-peer-exchange-${data['userID']}', {
+            'userID': Get.find<GlobalController>().userId.value,
+            'type': EmitType.answer.name,
+            'data': {
+              'sdp': answer.sdp,
+              'type': answer.type,
+            }
+          });
+        } catch (e) {
+          ll("EXCEPTION: $e");
+        }
+      }
+    };
+
+    peerConnection?.onIceGatheringState = (RTCIceGatheringState state) {
+      ll('ICE connection state change: $state');
+    };
+
+    peerConnection?.onRenegotiationNeeded = () {
+      ll("RE NEGOTIATION NEEDED");
+    };
+  }
 }

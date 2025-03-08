@@ -73,7 +73,7 @@ class Inbox extends StatelessWidget {
                                               isMute: false,
                                               isLastMessageSelf: false,
                                               isSeen: item['isSeen'],
-                                              // receiverData: messengerController.roomList[index],
+                                              receiverData: messengerController.roomList[index],
                                               lastMessageTime: messengerController.roomList[index].updatedAt!));
                                         })),
                                   ),
