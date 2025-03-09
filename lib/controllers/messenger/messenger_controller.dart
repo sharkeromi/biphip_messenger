@@ -267,6 +267,7 @@ class MessengerController extends GetxController {
     //Creating offer
     RTCSessionDescription offer = await peerConnection.createOffer();
     ll("OFFER CREATED");
+    globalController.iceCandidateList.clear();
     await peerConnection.setLocalDescription(offer);
     socket.emit('mobile-chat-peer-exchange-$userID', {
       'userID': Get.find<GlobalController>().userId.value,
@@ -276,6 +277,16 @@ class MessengerController extends GetxController {
         'type': offer.type,
       }
     });
+
+    peerConnection.onIceCandidate = (RTCIceCandidate candidate) {
+      globalController.iceCandidateList.add(candidate);
+      Map<String, dynamic> data = {
+        'candidate': candidate.candidate,
+        'sdpMid': candidate.sdpMid,
+        'sdpMLineIndex': candidate.sdpMLineIndex,
+      };
+      ll("CREATING ICE CANDIDATE $data");
+    };
   }
 
   void registerPeerConnectionListeners(RTCPeerConnection? peerConnection, [data]) {

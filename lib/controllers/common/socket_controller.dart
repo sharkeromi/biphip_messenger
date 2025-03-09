@@ -40,6 +40,7 @@ class SocketController {
     });
 
     socket.on("mobile-chat-peer-exchange-${Get.find<GlobalController>().userId.value}", (data) async {
+      RTCPeerConnection? peerConnection;
       if (data['type'] == EmitType.status.name) {
         Get.find<GlobalController>().populatePeerList(data['userID']);
       } else if (data['type'] == EmitType.offer.name) {
@@ -61,10 +62,7 @@ class SocketController {
         ll('Setting remote description');
         RTCSessionDescription description = RTCSessionDescription(data['data']['sdp'], data['data']['type']);
         await peerConnection?.setRemoteDescription(description);
-
       } else if (data['type'] == EmitType.answer.name) {
-
-         RTCPeerConnection? peerConnection;
         ll("GOT NEW ANSWER: $data");
         Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var user in Get.find<MessengerController>().allRoomMessageList) user['userID']: user};
         if (allRoomMessageListMap.containsKey(data['userID'])) {
@@ -76,8 +74,34 @@ class SocketController {
         );
         ll("Setting remote answer description");
         await peerConnection?.setRemoteDescription(answer);
+        for (int i = 0; i < globalController.iceCandidateList.length; i++) {
+          socket.emit('mobile-chat-peer-exchange-${data['userID']}', {
+            'userID': Get.find<GlobalController>().userId.value,
+            'type': EmitType.candidate.name,
+            'data': {
+              'candidate': globalController.iceCandidateList[i].candidate,
+              'sdpMid': globalController.iceCandidateList[i].sdpMid,
+              'sdpMLineIndex': globalController.iceCandidateList[i].sdpMLineIndex,
+            }
+          });
+        }
       } else if (data['type'] == EmitType.candidate.name) {
         ll("GOT NEW CANDIDATE: $data");
+        Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var user in Get.find<MessengerController>().allRoomMessageList) user['userID']: user};
+        ll(allRoomMessageListMap);
+         if (allRoomMessageListMap.containsKey(data['userID'])) {
+          if (allRoomMessageListMap[data['userID']]!['peerConnection'] != null) {
+            ll("PC already created");
+            peerConnection = allRoomMessageListMap[data['userID']]!['peerConnection'];
+          }
+         }
+        peerConnection!.addCandidate(
+          RTCIceCandidate(
+            data['data']['candidate'],
+            data['data']['sdpMid'],
+            data['data']['sdpMLineIndex'],
+          ),
+        );
       }
     });
   }
