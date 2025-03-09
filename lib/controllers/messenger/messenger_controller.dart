@@ -246,14 +246,39 @@ class MessengerController extends GetxController {
   };
 
   Future<void> connectUser(userID) async {
+    Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var user in allRoomMessageList) user['userID']: user};
     RTCPeerConnection peerConnection = await createPeerConnection(configuration);
     registerPeerConnectionListeners(peerConnection);
+
+    if (allRoomMessageListMap.containsKey(userID)) {
+      allRoomMessageListMap[userID]!['peerConnection'] = peerConnection;
+    }
+    allRoomMessageList.clear();
+    allRoomMessageList.addAll(allRoomMessageListMap.values.toList());
 
     //Creating offer
     RTCSessionDescription offer = await peerConnection.createOffer();
     ll("OFFER CREATED");
+    globalController.iceCandidateList.clear();
     await peerConnection.setLocalDescription(offer);
-    socket.emit('mobile-chat-peer-exchange-$userID', {'userID': Get.find<GlobalController>().userId.value, 'type': EmitType.offer.name, 'data': offer});
+    socket.emit('mobile-chat-peer-exchange-$userID', {
+      'userID': Get.find<GlobalController>().userId.value,
+      'type': EmitType.offer.name,
+      'data': {
+        'sdp': offer.sdp,
+        'type': offer.type,
+      }
+    });
+
+    peerConnection.onIceCandidate = (RTCIceCandidate candidate) {
+      globalController.iceCandidateList.add(candidate);
+      Map<String, dynamic> data = {
+        'candidate': candidate.candidate,
+        'sdpMid': candidate.sdpMid,
+        'sdpMLineIndex': candidate.sdpMLineIndex,
+      };
+      ll("CREATING ICE CANDIDATE $data");
+    };
   }
 
   void registerPeerConnectionListeners(RTCPeerConnection? peerConnection, [data]) {

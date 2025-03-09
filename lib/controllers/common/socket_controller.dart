@@ -40,19 +40,68 @@ class SocketController {
     });
 
     socket.on("mobile-chat-peer-exchange-${Get.find<GlobalController>().userId.value}", (data) async {
+      RTCPeerConnection? peerConnection;
       if (data['type'] == EmitType.status.name) {
         Get.find<GlobalController>().populatePeerList(data['userID']);
       } else if (data['type'] == EmitType.offer.name) {
+        RTCPeerConnection? peerConnection;
+        Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var user in Get.find<MessengerController>().allRoomMessageList) user['userID']: user};
+
         ll("GOT NEW OFFER: $data");
-        RTCPeerConnection? peerConnection = await createPeerConnection(Get.find<MessengerController>().configuration);
-        Get.find<MessengerController>().registerPeerConnectionListeners(peerConnection, data);
+        if (allRoomMessageListMap.containsKey(data['userID'])) {
+          if (allRoomMessageListMap[data['userID']]!['peerConnection'] != null) {
+            peerConnection = allRoomMessageListMap[data['userID']]!['peerConnection'];
+          } else {
+            peerConnection = await createPeerConnection(Get.find<MessengerController>().configuration);
+            ll("CREATED NEW PEER CoNNECTION");
+            allRoomMessageListMap[data['userID']]!['peerConnection'] = peerConnection;
+            Get.find<MessengerController>().registerPeerConnectionListeners(peerConnection, data);
+          }
+        }
+
         ll('Setting remote description');
         RTCSessionDescription description = RTCSessionDescription(data['data']['sdp'], data['data']['type']);
-        await peerConnection.setRemoteDescription(description);
+        await peerConnection?.setRemoteDescription(description);
       } else if (data['type'] == EmitType.answer.name) {
         ll("GOT NEW ANSWER: $data");
+        Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var user in Get.find<MessengerController>().allRoomMessageList) user['userID']: user};
+        if (allRoomMessageListMap.containsKey(data['userID'])) {
+          peerConnection = allRoomMessageListMap[data['userID']]!['peerConnection'];
+        }
+        var answer = RTCSessionDescription(
+          data['data']['sdp'],
+          data['data']['type'],
+        );
+        ll("Setting remote answer description");
+        await peerConnection?.setRemoteDescription(answer);
+        for (int i = 0; i < globalController.iceCandidateList.length; i++) {
+          socket.emit('mobile-chat-peer-exchange-${data['userID']}', {
+            'userID': Get.find<GlobalController>().userId.value,
+            'type': EmitType.candidate.name,
+            'data': {
+              'candidate': globalController.iceCandidateList[i].candidate,
+              'sdpMid': globalController.iceCandidateList[i].sdpMid,
+              'sdpMLineIndex': globalController.iceCandidateList[i].sdpMLineIndex,
+            }
+          });
+        }
       } else if (data['type'] == EmitType.candidate.name) {
         ll("GOT NEW CANDIDATE: $data");
+        Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var user in Get.find<MessengerController>().allRoomMessageList) user['userID']: user};
+        ll(allRoomMessageListMap);
+         if (allRoomMessageListMap.containsKey(data['userID'])) {
+          if (allRoomMessageListMap[data['userID']]!['peerConnection'] != null) {
+            ll("PC already created");
+            peerConnection = allRoomMessageListMap[data['userID']]!['peerConnection'];
+          }
+         }
+        peerConnection!.addCandidate(
+          RTCIceCandidate(
+            data['data']['candidate'],
+            data['data']['sdpMid'],
+            data['data']['sdpMLineIndex'],
+          ),
+        );
       }
     });
   }

@@ -8,6 +8,7 @@ import 'package:biphip_messenger/widgets/common/button/custom_icon_button.dart';
 import 'package:biphip_messenger/widgets/common/button/custom_text_button.dart';
 import 'package:biphip_messenger/widgets/common/textfields/custom_textfield.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 class GlobalController extends GetxController {
   final RxMap appLang = RxMap({'langCode': 'en', 'countryCode': 'US'});
@@ -310,6 +311,7 @@ class GlobalController extends GetxController {
       Get.find<MessengerController>().updateRoomListWithOnlineUsers();
     }
   }
+  RxList<RTCIceCandidate> iceCandidateList= RxList<RTCIceCandidate>([]);
 
   final RxDouble keyboardHeight = RxDouble(0.0);
   //! end
