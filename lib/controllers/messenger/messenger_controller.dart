@@ -254,9 +254,16 @@ class MessengerController extends GetxController {
   };
 
   Future<void> connectUser(userID) async {
+    Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var user in allRoomMessageList) user['userID']: user};
     RTCPeerConnection peerConnection = await createPeerConnection(configuration);
     registerPeerConnectionListeners(peerConnection);
-    
+
+    if (allRoomMessageListMap.containsKey(userID)) {
+      allRoomMessageListMap[userID]!['peerConnection'] = peerConnection;
+    }
+    allRoomMessageList.clear();
+    allRoomMessageList.addAll(allRoomMessageListMap.values.toList());
+
     //Creating offer
     RTCSessionDescription offer = await peerConnection.createOffer();
     ll("OFFER CREATED");
@@ -264,23 +271,24 @@ class MessengerController extends GetxController {
     socket.emit('mobile-chat-peer-exchange-$userID', {
       'userID': Get.find<GlobalController>().userId.value,
       'type': EmitType.offer.name,
-      'data': offer
+      'data': {
+        'sdp': offer.sdp,
+        'type': offer.type,
+      }
     });
-
   }
 
   void registerPeerConnectionListeners(RTCPeerConnection? peerConnection, [data]) {
-
-    peerConnection?.onConnectionState = (RTCPeerConnectionState state)async {
+    peerConnection?.onConnectionState = (RTCPeerConnectionState state) async {
       ll('Connection state change: $state');
-        if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed) {
+      if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed) {
         await peerConnection.restartIce();
       }
     };
 
-    peerConnection?.onSignalingState = (RTCSignalingState state) async{
+    peerConnection?.onSignalingState = (RTCSignalingState state) async {
       ll('Signaling state change: $state');
-       if (state == RTCSignalingState.RTCSignalingStateHaveRemoteOffer) {
+      if (state == RTCSignalingState.RTCSignalingStateHaveRemoteOffer) {
         try {
           var answer = await peerConnection.createAnswer();
           ll('Created Answer $answer');

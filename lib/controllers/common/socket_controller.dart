@@ -43,14 +43,39 @@ class SocketController {
       if (data['type'] == EmitType.status.name) {
         Get.find<GlobalController>().populatePeerList(data['userID']);
       } else if (data['type'] == EmitType.offer.name) {
+        RTCPeerConnection? peerConnection;
+        Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var user in Get.find<MessengerController>().allRoomMessageList) user['userID']: user};
+
         ll("GOT NEW OFFER: $data");
-        RTCPeerConnection? peerConnection = await createPeerConnection(Get.find<MessengerController>().configuration);
-        Get.find<MessengerController>().registerPeerConnectionListeners(peerConnection, data);
+        if (allRoomMessageListMap.containsKey(data['userID'])) {
+          if (allRoomMessageListMap[data['userID']]!['peerConnection'] != null) {
+            peerConnection = allRoomMessageListMap[data['userID']]!['peerConnection'];
+          } else {
+            peerConnection = await createPeerConnection(Get.find<MessengerController>().configuration);
+            ll("CREATED NEW PEER CoNNECTION");
+            allRoomMessageListMap[data['userID']]!['peerConnection'] = peerConnection;
+            Get.find<MessengerController>().registerPeerConnectionListeners(peerConnection, data);
+          }
+        }
+
         ll('Setting remote description');
         RTCSessionDescription description = RTCSessionDescription(data['data']['sdp'], data['data']['type']);
-        await peerConnection.setRemoteDescription(description);
+        await peerConnection?.setRemoteDescription(description);
+
       } else if (data['type'] == EmitType.answer.name) {
+
+         RTCPeerConnection? peerConnection;
         ll("GOT NEW ANSWER: $data");
+        Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var user in Get.find<MessengerController>().allRoomMessageList) user['userID']: user};
+        if (allRoomMessageListMap.containsKey(data['userID'])) {
+          peerConnection = allRoomMessageListMap[data['userID']]!['peerConnection'];
+        }
+        var answer = RTCSessionDescription(
+          data['data']['sdp'],
+          data['data']['type'],
+        );
+        ll("Setting remote answer description");
+        await peerConnection?.setRemoteDescription(answer);
       } else if (data['type'] == EmitType.candidate.name) {
         ll("GOT NEW CANDIDATE: $data");
       }

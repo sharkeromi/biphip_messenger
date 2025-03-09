@@ -139,7 +139,7 @@ class ApiController {
       if (response.statusCode == 200) {
         final object = json.decode(response.body.toString());
         final prettyString = const JsonEncoder.withIndent('  ').convert(object);
-        log("Response : $prettyString");
+        // log("Response : $prettyString");
         CommonDM cm = convertToCommonObject(jsonDecode(response.body));
         return cm;
       } else if (response.statusCode == 401 || response.statusCode == 403) {
