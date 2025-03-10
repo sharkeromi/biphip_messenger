@@ -1,6 +1,7 @@
 import 'package:biphip_messenger/controllers/common/global_controller.dart';
 import 'package:biphip_messenger/controllers/common/sp_controller.dart';
 import 'package:biphip_messenger/controllers/messenger/messenger_controller.dart';
+import 'package:biphip_messenger/models/messenger/message_list_model.dart';
 import 'package:biphip_messenger/utils/constants/imports.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
@@ -55,19 +56,61 @@ class SocketController {
             peerConnection = await createPeerConnection(Get.find<MessengerController>().configuration);
             ll("CREATED NEW PEER CoNNECTION");
             allRoomMessageListMap[data['userID']]!['peerConnection'] = peerConnection;
-            Get.find<MessengerController>().registerPeerConnectionListeners(peerConnection, data);
+            Get.find<MessengerController>().registerPeerConnectionListeners(peerConnection, data['userID']);
           }
+        } else {
+          peerConnection = await createPeerConnection(Get.find<MessengerController>().configuration);
+          ll("CREATED NEW PEER CoNNECTION");
+          allRoomMessageListMap[data['userID']]!['peerConnection'] = peerConnection;
+          Get.find<MessengerController>().registerPeerConnectionListeners(peerConnection, data['userID']);
         }
+
+        peerConnection?.onDataChannel = (channel) {
+          ll("On DATA Channel: ${channel.label}");
+
+          Get.find<MessengerController>().setUpRoomDataChannel(data['userID'], channel);
+          channel.onDataChannelState = (RTCDataChannelState state) {
+            Get.find<MessengerController>().handleRTCEvents(state);
+          };
+
+          channel.onMessage = (RTCDataChannelMessage message) {
+            ll('Received message: ${message.text}');
+            ll("USER ID: ${data['userID']} DATA CHANNEL: ${channel.label}");
+            int index = Get.find<MessengerController>().allRoomMessageList.indexWhere((user) => user['userID'] == data['userID']);
+            if (index != -1) {
+              ll("here");
+              globalController.showSnackBar(
+                  title: Get.find<MessengerController>().allRoomMessageList[index]["userName"], message: message.text, color: Colors.green);
+              Get.find<MessengerController>().allRoomMessageList[index]["isSeen"] = false.obs;
+              Get.find<MessengerController>().allRoomMessageList[index]["messages"].insert(
+                    0,
+                    MessageData(text: message.text, senderId: data['userID'], messageText: message.text, senderImage: data['userImage']),
+                  );
+            }
+          };
+        };
 
         ll('Setting remote description');
         RTCSessionDescription description = RTCSessionDescription(data['data']['sdp'], data['data']['type']);
         await peerConnection?.setRemoteDescription(description);
+
+        peerConnection?.onIceCandidate = (RTCIceCandidate candidate) {
+          ll("GENERATED ICE CANDIDATE");
+          socket.emit('mobile-chat-peer-exchange-${data['userID']}', {
+            'userID': Get.find<GlobalController>().userId.value,
+            'type': "candidate",
+            'data': {
+              'candidate': candidate.candidate,
+              'sdpMid': candidate.sdpMid,
+              'sdpMLineIndex': candidate.sdpMLineIndex,
+            }
+          });
+        };
       } else if (data['type'] == EmitType.answer.name) {
         ll("GOT NEW ANSWER: $data");
         Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var user in Get.find<MessengerController>().allRoomMessageList) user['userID']: user};
-        if (allRoomMessageListMap.containsKey(data['userID'])) {
-          peerConnection = allRoomMessageListMap[data['userID']]!['peerConnection'];
-        }
+        peerConnection = allRoomMessageListMap[data['userID']]!['peerConnection'];
+        ll("PC null: ${peerConnection == null}");
         var answer = RTCSessionDescription(
           data['data']['sdp'],
           data['data']['type'],
@@ -88,13 +131,10 @@ class SocketController {
       } else if (data['type'] == EmitType.candidate.name) {
         ll("GOT NEW CANDIDATE: $data");
         Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var user in Get.find<MessengerController>().allRoomMessageList) user['userID']: user};
-        ll(allRoomMessageListMap);
-         if (allRoomMessageListMap.containsKey(data['userID'])) {
-          if (allRoomMessageListMap[data['userID']]!['peerConnection'] != null) {
-            ll("PC already created");
-            peerConnection = allRoomMessageListMap[data['userID']]!['peerConnection'];
-          }
-         }
+        if (allRoomMessageListMap[data['userID']]!['peerConnection'] != null) {
+          ll("PC already created");
+          peerConnection = allRoomMessageListMap[data['userID']]!['peerConnection'];
+        }
         peerConnection!.addCandidate(
           RTCIceCandidate(
             data['data']['candidate'],

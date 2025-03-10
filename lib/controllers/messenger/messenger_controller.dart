@@ -65,8 +65,62 @@ class MessengerController extends GetxController {
   List<String> messageQueue = [];
   int batchSize = 1;
 
+  void sendMessage(String message, RTCDataChannel dataChannel) async {
+    if (isInternetConnectionAvailable.value) {
+      setMessage(selectedReceiver.value!.id, MessageData(text: message, senderId: globalController.userId.value, messageText: message));
+
+      sendViaDataChannel(message, dataChannel);
+
+      messageQueue.add(message);
+
+      if (messageQueue.length >= batchSize && isInternetConnectionAvailable.value) {
+        for (int i = 0; i < messageQueue.length; i++) {
+          sendBatchMessages(messageQueue[i]);
+        }
+        messageQueue.clear();
+      }
+      messageTextEditingController.clear();
+    }
+  }
+
+  void sendViaDataChannel(String message, dataChannel) {
+    if (dataChannel.state == RTCDataChannelState.RTCDataChannelOpen) {
+      dataChannel.send(RTCDataChannelMessage(message));
+    }
+  }
+
+  // Send through API
   // Send through API
   final RxBool isSendMessageLoading = RxBool(false);
+  Future<void> sendBatchMessages(message) async {
+    try {
+      isSendMessageLoading.value = true;
+      String? token = await spController.getBearerToken();
+      Map<String, dynamic> body = {
+        'room_id': selectedReceiver.value!.id.toString(),
+        'message': message.toString(),
+      };
+      var response = await apiController.commonApiCall(
+        requestMethod: kPost,
+        url: kuSendMessage,
+        body: body,
+        token: token,
+      ) as CommonDM;
+      if (response.success == true) {
+      } else {
+        isSendMessageLoading.value = false;
+        ErrorModel errorModel = ErrorModel.fromJson(response.data);
+        if (errorModel.errors.isEmpty) {
+          globalController.showSnackBar(title: ksError.tr, message: response.message, color: cRedColor);
+        } else {
+          globalController.showSnackBar(title: ksError.tr, message: errorModel.errors[0].message, color: cRedColor);
+        }
+      }
+    } catch (e) {
+      isSendMessageLoading.value = false;
+      ll('sendBatchMessages error: $e');
+    }
+  }
 
   // Get Messages
   RxList<Map<String, dynamic>> allRoomMessageList = RxList<Map<String, dynamic>>([]);
@@ -92,7 +146,6 @@ class MessengerController extends GetxController {
 
   void updateRoomListWithOnlineUsers() {
     Map<int, Map<String, dynamic>> onlineUserMap = {for (var onlineUser in globalController.allOnlineUsers) onlineUser['userID']: onlineUser};
-    ll(onlineUserMap);
 
     for (var room in allRoomMessageList) {
       if (onlineUserMap.containsKey(room['userID'])) {
@@ -253,22 +306,33 @@ class MessengerController extends GetxController {
     ],
   };
 
-  Future<void> connectUser(userID) async {
+  Future<void> connectUser(userID, roomID) async {
     Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var user in allRoomMessageList) user['userID']: user};
-    RTCPeerConnection peerConnection = await createPeerConnection(configuration);
-    registerPeerConnectionListeners(peerConnection);
 
-    if (allRoomMessageListMap.containsKey(userID)) {
-      allRoomMessageListMap[userID]!['peerConnection'] = peerConnection;
-    }
+    ll("CREATING PEER CONNECTION");
+    RTCPeerConnection peerConnection = await createPeerConnection(configuration);
+
+    ll("CREATING DATA CHANNEL");
+    RTCDataChannelInit dataChannelDict = RTCDataChannelInit();
+    dataChannelDict.ordered = true;
+    String dataChannelName = "room-$roomID";
+    RTCDataChannel dataChannel = await peerConnection.createDataChannel(dataChannelName, dataChannelDict);
+    setupDataChannelListeners(dataChannel, userID);
+    registerPeerConnectionListeners(peerConnection, userID);
+
+    allRoomMessageListMap[userID]!['peerConnection'] = peerConnection;
+    allRoomMessageListMap[userID]!['dataChannel'] = dataChannel;
+
     allRoomMessageList.clear();
     allRoomMessageList.addAll(allRoomMessageListMap.values.toList());
 
-    //Creating offer
+    ll("Creating offer");
     RTCSessionDescription offer = await peerConnection.createOffer();
-    ll("OFFER CREATED");
     globalController.iceCandidateList.clear();
+    ll("Setting local description");
     await peerConnection.setLocalDescription(offer);
+
+    ll("Sending offer");
     socket.emit('mobile-chat-peer-exchange-$userID', {
       'userID': Get.find<GlobalController>().userId.value,
       'type': EmitType.offer.name,
@@ -286,10 +350,17 @@ class MessengerController extends GetxController {
         'sdpMLineIndex': candidate.sdpMLineIndex,
       };
       ll("CREATING ICE CANDIDATE $data");
+      socket.emit('mobile-chat-peer-ice-candidate-$userID', {
+        'userID': Get.find<GlobalController>().userId.value,
+        'type': EmitType.candidate.name,
+        'data': data,
+      });
     };
+
+    setUpRoomDataChannel(userID, dataChannel);
   }
 
-  void registerPeerConnectionListeners(RTCPeerConnection? peerConnection, [data]) {
+  void registerPeerConnectionListeners(RTCPeerConnection? peerConnection, userID) {
     peerConnection?.onConnectionState = (RTCPeerConnectionState state) async {
       ll('Connection state change: $state');
       if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed) {
@@ -305,7 +376,7 @@ class MessengerController extends GetxController {
           ll('Created Answer $answer');
           await peerConnection.setLocalDescription(answer);
 
-          socket.emit('mobile-chat-peer-exchange-${data['userID']}', {
+          socket.emit('mobile-chat-peer-exchange-$userID', {
             'userID': Get.find<GlobalController>().userId.value,
             'type': EmitType.answer.name,
             'data': {
@@ -325,6 +396,130 @@ class MessengerController extends GetxController {
 
     peerConnection?.onRenegotiationNeeded = () {
       ll("RE NEGOTIATION NEEDED");
+      if (isNegotiating.value) {
+        ll("Skipping renegotiation to prevent collision.");
+        return;
+      }
+      isNegotiating.value = true;
+      // renegotiate(peerConnection, userID);
+      isNegotiating.value = false;
     };
+  }
+
+  RxBool isNegotiating = RxBool(false);
+
+  Future<void> renegotiate(RTCPeerConnection peerConnection, userID) async {
+    if (peerConnection.signalingState == RTCSignalingState.RTCSignalingStateHaveLocalOffer) {
+      ll("Skipping renegotiation: Already have a local offer");
+      return;
+    }
+    if (peerConnection.signalingState == RTCSignalingState.RTCSignalingStateStable) {
+      ll("Creating new offer for renegotiation");
+
+      RTCSessionDescription? offer;
+      try {
+        offer = await peerConnection.createOffer();
+        if (offer.sdp == null || offer.sdp!.isEmpty) {
+          ll("Error: Offer SDP is null or empty");
+          return;
+        }
+      } catch (e) {
+        ll("Error creating offer: $e");
+        return;
+      }
+      RTCSessionDescription sanitizedOffer = sanitizeSDP(offer);
+
+      try {
+        ll("Setting new local description");
+        await peerConnection.setLocalDescription(sanitizedOffer);
+      } catch (e) {
+        ll("Error setting local description: $e");
+        return;
+      }
+
+      socket.emit('mobile-chat-peer-exchange-$userID', {
+        'userID': Get.find<GlobalController>().userId.value,
+        'type': EmitType.offer.name,
+        'data': {
+          'sdp': sanitizedOffer.sdp,
+          'type': sanitizedOffer.type,
+        }
+      });
+    } else {
+      ll("Skipping renegotiation: Signaling state is ${peerConnection.signalingState}");
+    }
+  }
+
+// Ensures media order consistency
+  RTCSessionDescription sanitizeSDP(RTCSessionDescription sessionDescription) {
+    String sdp = sessionDescription.sdp!;
+
+    List<String> lines = sdp.split("\n");
+    lines.sort((a, b) {
+      if (a.startsWith("m=video")) return -1;
+      if (b.startsWith("m=video")) return 1;
+      if (a.startsWith("m=audio")) return -1;
+      if (b.startsWith("m=audio")) return 1;
+      return 0;
+    });
+    var offer = RTCSessionDescription(lines.join("\n"), sessionDescription.type);
+    ll("SDP: ${offer.sdp}");
+    ll("TYPE: ${offer.type}");
+    return offer;
+  }
+
+  void handleRTCEvents(RTCDataChannelState state) {
+    switch (state) {
+      case RTCDataChannelState.RTCDataChannelOpen:
+        ll('dc connection success');
+
+        break;
+
+      case RTCDataChannelState.RTCDataChannelClosed:
+        ll(' dc closed ');
+
+        break;
+      case RTCDataChannelState.RTCDataChannelConnecting:
+        break;
+      case RTCDataChannelState.RTCDataChannelClosing:
+        break;
+    }
+  }
+
+  void setupDataChannelListeners(RTCDataChannel dataChannel, userID) {
+    dataChannel.onDataChannelState = (RTCDataChannelState state) {
+      ll("STATE CHANGED: $state");
+    };
+
+    dataChannel.onMessage = (RTCDataChannelMessage message) {
+      ll('Received message: ${message.text}');
+      ll("USER NAME: $userID DATA CHANNEL: ${dataChannel.label}");
+      int index = allRoomMessageList.indexWhere((user) => user['userID'] == userID);
+      if (index != -1) {
+        globalController.showSnackBar(title: allRoomMessageList[index]["userName"], message: message.text, color: Colors.green);
+        allRoomMessageList[index]["isSeen"] = false.obs;
+        allRoomMessageList[index]["messages"].insert(
+            0,
+            MessageData(
+                text: message.text,
+                senderId: Get.find<MessengerController>().selectedReceiver.value!.roomUserId,
+                messageText: message.text,
+                senderImage: Get.find<MessengerController>().selectedReceiver.value!.roomImage![0]));
+      }
+    };
+  }
+
+  RTCDataChannel? targetDataChannel;
+  void setUpRoomDataChannel(userID, dataChannel) async {
+    targetDataChannel = dataChannel;
+    ll("Set up room data channel: $targetDataChannel $dataChannel");
+    Map<int, Map<String, dynamic>> roomMap = {for (var onlineUser in allRoomMessageList) onlineUser['userID']: onlineUser};
+
+    if (roomMap.containsKey(userID)) {
+      roomMap[userID]!['dataChannelLabel'] = dataChannel.label;
+      roomMap[userID]!['dataChannel'] = dataChannel;
+    }
+    allRoomMessageList.clear();
+    allRoomMessageList.addAll(roomMap.values.toList());
   }
 }

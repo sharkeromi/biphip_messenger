@@ -40,7 +40,11 @@ class InboxContainer extends StatelessWidget {
       onTap: () async {
         messengerController.selectedReceiver.value = receiverData;
         messengerController.selectedRoomIndex.value = index;
-        await messengerController.connectUser(userID);
+         if (dataChannel == null) {
+          messengerController.connectUser(userID, roomID);
+        } else {
+          messengerController.targetDataChannel = dataChannel;
+        }
         Get.toNamed(krMessages);
         //* GET MESSAGE API CALL
         await messengerController.getMessageList(roomID);

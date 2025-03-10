@@ -118,8 +118,8 @@ class ChatTextField extends StatelessWidget {
                     child: InkWell(
                       onTap: messengerController.isSendEnabled.value
                           ? () {
-                              // messengerController.sendMessage(
-                              //     messengerController.messageTextEditingController.text.trim(), messengerController.targetDataChannel!);
+                              messengerController.sendMessage(
+                                  messengerController.messageTextEditingController.text.trim(), messengerController.targetDataChannel!);
                             }
                           : null,
                       child: const Icon(
