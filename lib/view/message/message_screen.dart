@@ -1,5 +1,5 @@
-
 import 'package:biphip_messenger/controllers/common/global_controller.dart';
+import 'package:biphip_messenger/controllers/common/socket_controller.dart';
 import 'package:biphip_messenger/controllers/messenger/messenger_controller.dart';
 import 'package:biphip_messenger/models/messenger/message_list_model.dart';
 import 'package:biphip_messenger/utils/constants/imports.dart';
@@ -45,21 +45,21 @@ class MessageScreen extends StatelessWidget {
                               shape: BoxShape.circle,
                             ),
                             child: messengerController.selectedReceiver.value?.roomImage != null &&
-                                messengerController.selectedReceiver.value!.roomImage!.isNotEmpty
+                                    messengerController.selectedReceiver.value!.roomImage!.isNotEmpty
                                 ? Image.network(
-                              messengerController.selectedReceiver.value!.roomImage![0].toString(),
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => const Icon(
-                                BipHip.user,
-                                size: kIconSize24,
-                                color: cIconColor,
-                              ),
-                            )
+                                    messengerController.selectedReceiver.value!.roomImage![0].toString(),
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => const Icon(
+                                      BipHip.user,
+                                      size: kIconSize24,
+                                      color: cIconColor,
+                                    ),
+                                  )
                                 : const Icon(
-                              BipHip.user,
-                              size: kIconSize24,
-                              color: cIconColor,
-                            ),
+                                    BipHip.user,
+                                    size: kIconSize24,
+                                    color: cIconColor,
+                                  ),
                           ),
                         ),
                         Positioned(
@@ -109,7 +109,7 @@ class MessageScreen extends StatelessWidget {
                     child: TextButton(
                       style: kTextButtonStyle,
                       onPressed: () {
-                        // messengerController.ringUser(messengerController.selectedReceiver.value!.roomUserId, false);
+                        messengerController.ringUser(messengerController.selectedReceiver.value!.roomUserId, CallType.video.name);
                       },
                       child: Icon(
                         BipHip.video,
@@ -123,7 +123,7 @@ class MessageScreen extends StatelessWidget {
                     child: TextButton(
                       style: kTextButtonStyle,
                       onPressed: () {
-                        // messengerController.ringUser(messengerController.selectedReceiver.value!.roomUserId, true);
+                        messengerController.ringUser(messengerController.selectedReceiver.value!.roomUserId, CallType.audio.name);
                       },
                       child: Icon(
                         BipHip.phoneFill,
@@ -167,19 +167,15 @@ class MessageScreen extends StatelessWidget {
                                             messengerController.allRoomMessageList[messengerController.selectedRoomIndex.value]["messages"][index];
                                         return CustomBubbleNormal(
                                           userImage: (messengerController.selectedReceiver.value?.roomImage != null &&
-                                              messengerController.selectedReceiver.value!.roomImage!.isNotEmpty)
+                                                  messengerController.selectedReceiver.value!.roomImage!.isNotEmpty)
                                               ? messengerController.selectedReceiver.value!.roomImage![0]
                                               : null,
                                           text: messages.text.toString(),
                                           isSender: messages.senderId == Get.find<GlobalController>().userId.value ? true : false,
-                                          color: messages.senderId == Get.find<GlobalController>().userId.value
-                                              ? cPrimaryColor
-                                              : cNeutralColor,
+                                          color: messages.senderId == Get.find<GlobalController>().userId.value ? cPrimaryColor : cNeutralColor,
                                           tail: false,
                                           textStyle: regular16TextStyle(
-                                            messages.senderId == Get.find<GlobalController>().userId.value
-                                                ? cWhiteColor
-                                                : cBlackColor,
+                                            messages.senderId == Get.find<GlobalController>().userId.value ? cWhiteColor : cBlackColor,
                                           ),
                                         );
                                       },

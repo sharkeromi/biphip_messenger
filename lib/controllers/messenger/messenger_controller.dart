@@ -1,14 +1,17 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:biphip_messenger/controllers/common/api_controller.dart';
 import 'package:biphip_messenger/controllers/common/global_controller.dart';
 import 'package:biphip_messenger/controllers/common/socket_controller.dart';
 import 'package:biphip_messenger/controllers/common/sp_controller.dart';
+import 'package:biphip_messenger/helpers/messenger/messenger_helper.dart';
 import 'package:biphip_messenger/models/common/common_data_model.dart';
 import 'package:biphip_messenger/models/common/common_error_model.dart';
 import 'package:biphip_messenger/models/messenger/message_list_model.dart';
 import 'package:biphip_messenger/models/messenger/room_list_model.dart';
 import 'package:biphip_messenger/utils/constants/imports.dart';
+import 'package:biphip_messenger/utils/constants/routes.dart';
 import 'package:biphip_messenger/utils/constants/strings.dart';
 import 'package:biphip_messenger/utils/constants/urls.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
@@ -39,9 +42,27 @@ class MessengerController extends GetxController {
     super.onInit();
   }
 
+  Future<void> initializeRenderer() async {
+    if (localRenderer.textureId == null) {
+      localRenderer = RTCVideoRenderer();
+      await localRenderer.initialize();
+    }
+
+    if (remoteRenderer.textureId == null) {
+      remoteRenderer = RTCVideoRenderer();
+      await remoteRenderer.initialize();
+    }
+  }
+
+  void disposeRenderer() {
+    localRenderer.dispose();
+    remoteRenderer.dispose();
+  }
+
   @override
   void onClose() {
     super.onClose();
+    disposeRenderer();
   }
 
   //=====================================================
@@ -370,20 +391,37 @@ class MessengerController extends GetxController {
 
     peerConnection?.onSignalingState = (RTCSignalingState state) async {
       ll('Signaling state change: $state');
+
       if (state == RTCSignalingState.RTCSignalingStateHaveRemoteOffer) {
+        Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var user in allRoomMessageList) user['userID']: user};
         try {
           var answer = await peerConnection.createAnswer();
           ll('Created Answer $answer');
           await peerConnection.setLocalDescription(answer);
+          if (isInCallState.value) {
+            socket.emit('mobile-call-$userID', {
+              'userID': globalController.userId.value,
+              'callStatus': CallStatus.inCAll.name,
+              'type': "answer",
+              'data': {
+                'sdp': answer.sdp,
+                'type': answer.type,
+              }
+            });
+          } else {
+            socket.emit('mobile-chat-peer-exchange-$userID', {
+              'userID': Get.find<GlobalController>().userId.value,
+              'type': EmitType.answer.name,
+              'data': {
+                'sdp': answer.sdp,
+                'type': answer.type,
+              }
+            });
+          }
+          allRoomMessageListMap[callerID.value]!['peerConnection'] = peerConnection;
 
-          socket.emit('mobile-chat-peer-exchange-$userID', {
-            'userID': Get.find<GlobalController>().userId.value,
-            'type': EmitType.answer.name,
-            'data': {
-              'sdp': answer.sdp,
-              'type': answer.type,
-            }
-          });
+          allRoomMessageList.clear();
+          allRoomMessageList.addAll(allRoomMessageListMap.values.toList());
         } catch (e) {
           ll("EXCEPTION: $e");
         }
@@ -403,6 +441,40 @@ class MessengerController extends GetxController {
       isNegotiating.value = true;
       // renegotiate(peerConnection, userID);
       isNegotiating.value = false;
+    };
+
+    peerConnection?.onTrack = (RTCTrackEvent event) async {
+      ll('Got remote track sc: ${event.streams[0]}');
+      if (remoteStream == null) {
+        ll('Initializing remoteStream');
+        remoteStream = await createLocalMediaStream('remoteStream');
+      } else {
+        ll('remoteStream already initialized');
+      }
+
+      event.streams[0].getTracks().forEach((track) {
+        ll('Add a track to the remoteStream: $track');
+        remoteStream?.addTrack(track);
+        remoteRenderer.srcObject = remoteStream;
+        isRemoteFeedStreaming.value = true;
+      });
+    };
+
+    peerConnection?.onAddTrack = (MediaStream stream, MediaStreamTrack track) async {
+      ll("GETTING REMOTE TRACK SC: $track ${stream.id}");
+      if (remoteStream == null) {
+        ll('Initializing remoteStream');
+        remoteStream = await createLocalMediaStream('remoteStream');
+      } else {
+        ll('remoteStream already initialized');
+      }
+      remoteRenderer.srcObject = stream;
+      remoteStream = stream;
+      isRemoteFeedStreaming.value = true;
+    };
+
+    peerConnection?.onAddStream = (MediaStream stream) {
+      ll("Getting remote stream");
     };
   }
 
@@ -521,5 +593,171 @@ class MessengerController extends GetxController {
     }
     allRoomMessageList.clear();
     allRoomMessageList.addAll(roomMap.values.toList());
+  }
+
+  //*--------Audio Video Call Functions--------*//
+  RTCVideoRenderer localRenderer = RTCVideoRenderer();
+  RTCVideoRenderer remoteRenderer = RTCVideoRenderer();
+  MediaStream? localStream;
+  MediaStream? remoteStream;
+
+  final RxBool isAudioCallState = RxBool(false);
+  final RxBool isUserTypeSender = RxBool(false);
+  final RxBool isLocalFeedStreaming = RxBool(false);
+  final RxBool isRemoteFeedStreaming = RxBool(false);
+  final RxBool isMuted = RxBool(false);
+
+  final RxString callState = RxString("");
+  final RxString callerName = RxString("");
+  final RxString callerImage = RxString("");
+  final RxInt callerID = RxInt(-1);
+  final RxBool isInCallState = RxBool(false);
+
+  final RxMap<String, dynamic> callOffer = RxMap<String, dynamic>({});
+
+  //Ring function for Sender
+  Future<void> ringUser(userID, String callType) async {
+    isUserTypeSender.value = true;
+    callerID.value = userID;
+    Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var user in allRoomMessageList) user['userID']: user};
+    callerName.value = allRoomMessageListMap[userID]!['userName'];
+    callerImage.value = allRoomMessageListMap[userID]!['userImage'];
+
+    callState.value = CallStatus.ringing.name;
+    if (callType == CallType.audio.name) {
+      isAudioCallState.value = true;
+    } else {
+      isAudioCallState.value = false;
+    }
+    await initializeRenderer();
+    await initiateVideoCall(userID, callType);
+    Get.toNamed(krCallScreen);
+  }
+
+  Future<void> initiateVideoCall(userID, String callType) async {
+    RTCPeerConnection? peerConnection;
+    Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var user in Get.find<MessengerController>().allRoomMessageList) user['userID']: user};
+    peerConnection = allRoomMessageListMap[userID]!['peerConnection'];
+    await MessengerHelper().openUserMedia(callType);
+
+    localStream?.getTracks().forEach((track) {
+      ll("ON VIDEO CALL START GETTING LOCAL TRACK: $track");
+      peerConnection?.addTrack(track, localStream!);
+    });
+    RTCSessionDescription? offer;
+
+    if (callType == CallType.audio.name) {
+      offer = await peerConnection!.createOffer({
+        'offerToReceiveAudio': true,
+        'offerToReceiveVideo': false,
+      });
+    } else {
+      offer = await peerConnection!.createOffer();
+    }
+    if (callType == CallType.audio.name) {
+      Helper.setSpeakerphoneOn(false);
+    } else {
+      Helper.setSpeakerphoneOn(true);
+    }
+
+    await peerConnection.setLocalDescription(offer);
+    allRoomMessageListMap[userID]!['peerConnection'] = peerConnection;
+
+    allRoomMessageList.clear();
+    allRoomMessageList.addAll(allRoomMessageListMap.values.toList());
+
+    socket.emit('mobile-call-$userID', {
+      'userID': Get.find<GlobalController>().userId.value,
+      'callStatus': CallStatus.ringing.name,
+      'callType': callType,
+      'type': "offer",
+      'data': {
+        'sdp': offer.sdp,
+        'type': offer.type,
+      },
+    });
+
+    // todo: may need to store the peer connection
+  }
+
+  //Ring function for Receiver
+  void onCallRing(data) {
+    isInCallState.value = true;
+    isUserTypeSender.value = false;
+    Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var user in allRoomMessageList) user['userID']: user};
+    callerName.value = allRoomMessageListMap[data['userID']]!['userName'];
+    callerImage.value = allRoomMessageListMap[data['userID']]!['userImage'];
+    callerID.value = data['userID'];
+    callOffer.value = data['data'];
+    if (data['callType'] == CallType.audio.name) {
+      isAudioCallState.value = true;
+    } else {
+      isAudioCallState.value = false;
+    }
+    Get.toNamed(krRingingScreen);
+  }
+
+  //Decline from receiver
+  void onDeclineCall() {
+    Get.back();
+    globalController.showSnackBar(title: "Call declined!", message: "${callerName.value} declined the call", color: Colors.red, duration: 1000);
+  }
+
+  //Hangup from both sides
+  Future<void> onHangUpCall() async {
+    await MessengerHelper().hangUp();
+  }
+
+  //Accept call from receiver
+  void onAcceptCall(userID) async {
+    try {
+      await initializeRenderer();
+      await MessengerHelper().openUserMedia(isAudioCallState.value ? CallType.audio.name : CallType.video.name);
+      RTCPeerConnection? peerConnection;
+      Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var user in allRoomMessageList) user['userID']: user};
+
+      if (allRoomMessageListMap[userID]!['peerConnection'] != null) {
+        peerConnection = allRoomMessageListMap[userID]!['peerConnection'];
+      }
+      localStream?.getTracks().forEach((track) async {
+        ll("ON ANSWER VIDEO CALL GETTING LOCAL TRACK: $track");
+        await peerConnection!.addTrack(track, localStream!);
+      });
+      if (isAudioCallState.value) {
+        Helper.setSpeakerphoneOn(false);
+      } else {
+        Helper.setSpeakerphoneOn(true);
+      }
+      ll('Setting remote description for video call');
+      RTCSessionDescription description = RTCSessionDescription(callOffer['sdp'], callOffer['type']);
+      try {
+        await peerConnection?.setRemoteDescription(description);
+        ll("Remote description set successfully.: ${description.sdp}");
+      } catch (e) {
+        ll("Error setting remote description: $e");
+        return;
+      }
+      callState.value = CallStatus.inCAll.name;
+      Get.offAndToNamed(krCallScreen);
+    } catch (e) {
+      ll("EXCEPTION: $e");
+    }
+  }
+
+  Future<void> onCallStart(data) async {
+    RTCPeerConnection? peerConnection;
+    ll('Got new remote answer for video call: ${jsonEncode(data)}');
+    Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var user in Get.find<MessengerController>().allRoomMessageList) user['userID']: user};
+
+    peerConnection = allRoomMessageListMap[data['userID']]!['peerConnection'];
+
+    ll('Got Answer: ${jsonEncode(data)}');
+    var answer = RTCSessionDescription(
+      data['data']['sdp'],
+      data['data']['type'],
+    );
+
+    ll("Call Started");
+    await peerConnection?.setRemoteDescription(answer);
   }
 }

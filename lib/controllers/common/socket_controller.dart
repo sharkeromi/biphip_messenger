@@ -144,6 +144,19 @@ class SocketController {
         );
       }
     });
+
+    socket.on('mobile-call-${Get.find<GlobalController>().userId.value}', (data) async {
+      Get.find<MessengerController>().callState.value = data['callStatus'];
+      if (data['callStatus'] == CallStatus.ringing.name) {
+        Get.find<MessengerController>().onCallRing(data);
+      }else if (data['callStatus'] == CallStatus.decline.name) {
+        Get.find<MessengerController>().onDeclineCall();
+      }else if (data['callStatus'] == CallStatus.hangUp.name) {
+       await Get.find<MessengerController>().onHangUpCall();
+      }else if(data['callStatus'] == CallStatus.inCAll.name){
+        Get.find<MessengerController>().onCallStart(data);
+      }
+    });
   }
 }
 
@@ -152,6 +165,22 @@ enum EmitType {
   offer,
   answer,
   candidate;
+
+  String toJson() => name;
+}
+
+enum CallStatus {
+  ringing,
+  inCAll,
+  decline,
+  hangUp;
+
+  String toJson() => name;
+}
+
+enum CallType {
+  audio,
+  video;
 
   String toJson() => name;
 }

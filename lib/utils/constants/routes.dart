@@ -1,12 +1,11 @@
-
-
-
 import 'package:biphip_messenger/utils/constants/imports.dart';
 import 'package:biphip_messenger/view/auth/login/login.dart';
 import 'package:biphip_messenger/view/home/homepage.dart';
 import 'package:biphip_messenger/view/intro/splash_screen.dart';
+import 'package:biphip_messenger/view/message/call_screen.dart';
 import 'package:biphip_messenger/view/message/inbox.dart';
 import 'package:biphip_messenger/view/message/message_screen.dart';
+import 'package:biphip_messenger/view/message/ringing_screen.dart';
 
 const String krSplashScreen = '/splash-screen';
 const String krIntroductionScreen = '/introduction-screen';
@@ -154,48 +153,48 @@ const String krMessages = "/messages";
 const String krCallScreen = '/call-screen';
 const String krRingingScreen = '/ringing-screen';
 
- //*Notification
- const String krNotificationPage = "/notification-page";
+//*Notification
+const String krNotificationPage = "/notification-page";
 
- //*Dashboard
- const String krDashboardOverview = "/dashboard-overview";
- const String krDashboardOverviewContent = "/dashboard-overview-content";
- const String krDashboardOverviewAudience = "/dashboard-overview-audience";
- const String krDashboardFundTransfer = "/dashboard-fund-transfer";
- const String krDashboardFundTransferDetails = "/dashboard-fund-transfer-details";
- const String krDashboardSelectPeople = "/dashboard-select-people";
- const String krDashboardFundTransferOtp = "/dashboard-fund-transfer-otp";
- const String krDashboardDonation = "/dashboard-donation";
- const String krDashboardDonatedPost = "/dashboard-donated-post";
- const String krDashboardCheckInCalender = "/dashboard-check-in-calender";
- const String krDashboardGift = "/dashboard-gift";
- const String krDashboardGiftEarned = "/dashboard-gift-earned";
- const String krDashboardStar = "/dashboard-star";
- const String krDashboardStarHistory = "/dashboard-star-history";
- const String krDashboardAward = "/dashboard-award";
- const String krDashboardAllAwards = "/dashboard-all-awards";
- const String krDashboardPerformance = "/dashboard-performance";
- const String krDashboardQuiz = "/dashboard-quiz";
- const String krDashboardPayout = "/dashboard-payout";
- const String krDshboardPayoutWithdraw = "/dashboard-payout-withdraw";
- //* payout settings
- const String krPayoutManualLinkBankAccount = "/payout-manual-link-bank-account";
- const String krPayoutAddCrypto = "/payout-add-crypto";
- const String krPayoutAddDebitCard = "/payout-add-debit-card";
- const String krPayoutTaxInfo = "/payout-tax-info";
- const String krPayoutPassportVerification = "/payout-passport-verification";
- const String krPayoutNidVerification = "/payout-nid-verification";
- const String krPayoutStudentIdVerification = "/payout-student-id-verification";
- const String krPayoutBankAccountTaxPassportInfoView = "/payout-tax-info-view";
- const String krPayoutBusinessInfo = "/payout-business-info";
- 
- //* Profile view
- const String krProfileView = "/profile-view";
- const String krProfileViewAbout = "/profile-view-about";
- const String krProfileViewFriend = "/profile-view-friend";
- const String krProfileViewFamily = "/profile-view-family";
- const String krProfileViewFollower = "/profile-view-follower";
- const String krProfileViewCreateReview = "/profile-view-create-review";
+//*Dashboard
+const String krDashboardOverview = "/dashboard-overview";
+const String krDashboardOverviewContent = "/dashboard-overview-content";
+const String krDashboardOverviewAudience = "/dashboard-overview-audience";
+const String krDashboardFundTransfer = "/dashboard-fund-transfer";
+const String krDashboardFundTransferDetails = "/dashboard-fund-transfer-details";
+const String krDashboardSelectPeople = "/dashboard-select-people";
+const String krDashboardFundTransferOtp = "/dashboard-fund-transfer-otp";
+const String krDashboardDonation = "/dashboard-donation";
+const String krDashboardDonatedPost = "/dashboard-donated-post";
+const String krDashboardCheckInCalender = "/dashboard-check-in-calender";
+const String krDashboardGift = "/dashboard-gift";
+const String krDashboardGiftEarned = "/dashboard-gift-earned";
+const String krDashboardStar = "/dashboard-star";
+const String krDashboardStarHistory = "/dashboard-star-history";
+const String krDashboardAward = "/dashboard-award";
+const String krDashboardAllAwards = "/dashboard-all-awards";
+const String krDashboardPerformance = "/dashboard-performance";
+const String krDashboardQuiz = "/dashboard-quiz";
+const String krDashboardPayout = "/dashboard-payout";
+const String krDshboardPayoutWithdraw = "/dashboard-payout-withdraw";
+//* payout settings
+const String krPayoutManualLinkBankAccount = "/payout-manual-link-bank-account";
+const String krPayoutAddCrypto = "/payout-add-crypto";
+const String krPayoutAddDebitCard = "/payout-add-debit-card";
+const String krPayoutTaxInfo = "/payout-tax-info";
+const String krPayoutPassportVerification = "/payout-passport-verification";
+const String krPayoutNidVerification = "/payout-nid-verification";
+const String krPayoutStudentIdVerification = "/payout-student-id-verification";
+const String krPayoutBankAccountTaxPassportInfoView = "/payout-tax-info-view";
+const String krPayoutBusinessInfo = "/payout-business-info";
+
+//* Profile view
+const String krProfileView = "/profile-view";
+const String krProfileViewAbout = "/profile-view-about";
+const String krProfileViewFriend = "/profile-view-friend";
+const String krProfileViewFamily = "/profile-view-family";
+const String krProfileViewFollower = "/profile-view-follower";
+const String krProfileViewCreateReview = "/profile-view-create-review";
 
 //* Settings
 const String krProfileDetailsPage = "/profile-details-page";
@@ -230,4 +229,6 @@ List<GetPage<dynamic>>? routes = [
   //* Messenger
   GetPage(name: krInbox, page: () => Inbox(), transition: Transition.rightToLeft),
   GetPage(name: krMessages, page: () => MessageScreen(), transition: Transition.noTransition),
+  GetPage(name: krRingingScreen, page: () => RingingScreen(), transition: Transition.noTransition),
+  GetPage(name: krCallScreen, page: () => CallScreen(), transition: Transition.noTransition),
 ];
