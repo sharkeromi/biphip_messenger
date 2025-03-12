@@ -35,6 +35,7 @@ class MessengerHelper {
         await track.stop();
       });
       await messengerController.localStream!.dispose();
+       messengerController.localStream = null;
     }
 
     if (messengerController.remoteRenderer.srcObject != null) {
@@ -52,6 +53,7 @@ class MessengerHelper {
         await track.stop();
       });
       await messengerController.remoteStream!.dispose();
+      messengerController.remoteStream = null;
     }
 
     messengerController.disposeRenderer();
