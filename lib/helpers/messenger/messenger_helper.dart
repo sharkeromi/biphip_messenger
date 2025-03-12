@@ -35,7 +35,7 @@ class MessengerHelper {
         await track.stop();
       });
       await messengerController.localStream!.dispose();
-       messengerController.localStream = null;
+      messengerController.localStream = null;
     }
 
     if (messengerController.remoteRenderer.srcObject != null) {
@@ -56,11 +56,16 @@ class MessengerHelper {
       messengerController.remoteStream = null;
     }
 
+    stopForegroundService();
     messengerController.disposeRenderer();
     messengerController.isInCallState.value = false;
     messengerController.isRemoteFeedStreaming.value = false;
     messengerController.isLocalFeedStreaming.value = false;
     Get.back();
+  }
+
+  void stopForegroundService() async {
+    await webRTC.Helper.setSpeakerphoneOn(false);
   }
 
   Future<void> switchCamera(userID) async {
