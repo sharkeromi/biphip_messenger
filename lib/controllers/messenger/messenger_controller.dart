@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:biphip_messenger/controllers/common/api_controller.dart';
+import 'package:biphip_messenger/controllers/common/call_audio_service.dart';
 import 'package:biphip_messenger/controllers/common/global_controller.dart';
 import 'package:biphip_messenger/controllers/common/socket_controller.dart';
 import 'package:biphip_messenger/controllers/common/sp_controller.dart';
@@ -27,6 +28,7 @@ class MessengerController extends GetxController {
   final RxBool isSendEnabled = RxBool(false);
   final Rx<RoomData?> selectedReceiver = Rx<RoomData?>(null);
   final RxInt selectedRoomIndex = RxInt(-1);
+  final AudioService audioService = AudioService();
 
   @override
   void onInit() async {
@@ -636,6 +638,11 @@ class MessengerController extends GetxController {
     await initializeRenderer();
     await initiateVideoCall(userID, callType);
     Get.toNamed(krCallScreen);
+    if (callType == CallType.video.name) {
+      await audioService.playAudio(callerTunePath, isSpeaker: true);
+    } else {
+      await audioService.playAudio(callerTunePath, isSpeaker: false);
+    }
   }
 
   Future<void> initiateVideoCall(userID, String callType) async {
@@ -698,17 +705,20 @@ class MessengerController extends GetxController {
     } else {
       isAudioCallState.value = false;
     }
+    audioService.playAudio(ringtonePath, isSpeaker: true);
     Get.toNamed(krRingingScreen);
   }
 
   //Decline from receiver
   void onDeclineCall() {
+    audioService.stopAudio();
     Get.back();
     globalController.showSnackBar(title: "Call declined!", message: "${callerName.value} declined the call", color: Colors.red, duration: 1000);
   }
 
   //Hangup from both sides
   Future<void> onHangUpCall() async {
+    await audioService.stopAudio();
     await MessengerHelper().hangUp();
   }
 
@@ -742,6 +752,7 @@ class MessengerController extends GetxController {
         return;
       }
       callState.value = CallStatus.inCAll.name;
+      await audioService.stopAudio();
       Get.offAndToNamed(krCallScreen);
     } catch (e) {
       ll("EXCEPTION: $e");
@@ -762,6 +773,7 @@ class MessengerController extends GetxController {
     );
 
     ll("Call Started");
+    await audioService.stopAudio();
     await peerConnection?.setRemoteDescription(answer);
   }
 
@@ -786,12 +798,12 @@ class MessengerController extends GetxController {
       track.enabled = false;
       track.stop();
     }
- 
+
     socket.emit('mobile-call-$userID',
         {'userID': globalController.userId.value, 'callStatus': CallStatus.inCAll.name, 'type': "callSettings", 'data': "switchToAudio"});
     isAudioCallState.value = true;
     isLocalFeedStreaming.value = false;
-    if(!isRemoteFeedStreaming.value){
+    if (!isRemoteFeedStreaming.value) {
       Helper.setSpeakerphoneOn(false);
     }
   }
@@ -820,7 +832,7 @@ class MessengerController extends GetxController {
       track.stop();
     }
     isRemoteFeedStreaming.value = false;
-    if(!isLocalFeedStreaming.value){
+    if (!isLocalFeedStreaming.value) {
       Helper.setSpeakerphoneOn(false);
     }
   }
@@ -836,19 +848,24 @@ class MessengerController extends GetxController {
     }
     await MessengerHelper().intiVideoCallSwitcher();
 
-     localStream?.getTracks().forEach((track) {
+    localStream?.getTracks().forEach((track) {
       ll("ON VIDEO CALL START GETTING LOCAL TRACK: $track");
-      if(track.kind == 'video'){
+      if (track.kind == 'video') {
         track.enabled = true;
-      peerConnection?.addTrack(track, localStream!);
-
+        peerConnection?.addTrack(track, localStream!);
       }
     });
 
     final offer = await peerConnection!.createOffer();
     await peerConnection.setLocalDescription(offer);
-    socket.emit('mobile-call-$userID',
-        {'userID': globalController.userId.value, 'callStatus': CallStatus.inCAll.name, 'type': "callSettings", 'data': "switchToVideo",'sdp': offer.sdp,'sdp_type': offer.type});
+    socket.emit('mobile-call-$userID', {
+      'userID': globalController.userId.value,
+      'callStatus': CallStatus.inCAll.name,
+      'type': "callSettings",
+      'data': "switchToVideo",
+      'sdp': offer.sdp,
+      'sdp_type': offer.type
+    });
     isAudioCallState.value = false;
     isLocalFeedStreaming.value = true;
     Helper.setSpeakerphoneOn(true);
@@ -863,8 +880,8 @@ class MessengerController extends GetxController {
     Helper.setSpeakerphoneOn(true);
   }
 
-  void videoCallSwitchSDPSet(data)async{
-     RTCPeerConnection? peerConnection;
+  void videoCallSwitchSDPSet(data) async {
+    RTCPeerConnection? peerConnection;
     Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var user in Get.find<MessengerController>().allRoomMessageList) user['userID']: user};
 
     peerConnection = allRoomMessageListMap[data["userID"]]!['peerConnection'];

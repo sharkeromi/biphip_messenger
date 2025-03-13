@@ -33,6 +33,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   internet_connection_checker: ^3.0.1
+  audioplayers: ^6.4.0
 
 dev_dependencies:
   flutter_test:
@@ -50,6 +51,7 @@ flutter:
   assets:
     - assets/images/
     - assets/svg/
+    - assets/audio/
     - .env
     - .env.dev
     - .env.example

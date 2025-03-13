@@ -8,11 +8,11 @@
 //* common api
 //---------------------------------------
 
-const String kuGetAllProfessions = '/mobile/get-all-professions'; 
-const String kuGetAllInterests = '/mobile/get-all-interests'; 
+const String kuGetAllProfessions = '/mobile/get-all-professions';
+const String kuGetAllInterests = '/mobile/get-all-interests';
 const String kuGetAllLinkTypes = '/mobile/get-all-link-types';
 const String kuGetAllRelationShips = '/mobile/get-all-relationships';
-const String kuGetAllGenders = '/mobile/get-all-genders'; 
+const String kuGetAllGenders = '/mobile/get-all-genders';
 const String kuGetAllCities = '/mobile/get-all-cities';
 const String kuGetAllSchools = '/mobile/get-all-schools';
 const String kuGetAllCompanies = '/mobile/get-all-companies';
@@ -57,14 +57,14 @@ const String kuDeleteCity = '/mobile/user/delete-city';
 
 //* Work and Education
 const String kuGetWorkAndEducation = '/mobile/user/get-work-and-education';
-const String kuStoreSchool = '/mobile/user/store-school'; 
+const String kuStoreSchool = '/mobile/user/store-school';
 const String kuUpdateSchool = '/mobile/user/update-school';
 const String kuDeleteSchool = '/mobile/user/delete-school';
 const String kuStoreCollege = '/mobile/user/store-college';
 const String kuUpdateCollege = '/mobile/user/update-college';
 const String kuDeleteCollege = '/mobile/user/delete-college';
-const String kuStoreWork = '/mobile/user/store-work'; 
-const String kuUpdateWork = '/mobile/user/update-work'; 
+const String kuStoreWork = '/mobile/user/store-work';
+const String kuUpdateWork = '/mobile/user/update-work';
 const String kuDeleteWork = '/mobile/user/delete-work';
 
 //* Contact & Basic Info
@@ -315,9 +315,7 @@ const String kuGetCustomAudience = '/user/settings/custom-audience';
 const String kuGetLoginAlertStatus = '/user/settings/get-login-alert-status';
 const String kuPostLoginAlert = '/user/settings/login-alert';
 
-
 //* Profile view
-
 
 /*
 |--------------------------------------------------------------------------
@@ -393,3 +391,5 @@ const String kiNagadSvgImage = 'assets/svg/nagad.svg';
 const String kiPaypalSvgImage = 'assets/svg/paypal.svg';
 const String kiReviewSvgImage = 'assets/svg/review.svg';
 const String kiRightArrow = 'assets/svg/right_arrow.svg';
+const String ringtonePath = 'audio/ringtone.mp3';
+const String callerTunePath = 'audio/caller_tune.mp3';

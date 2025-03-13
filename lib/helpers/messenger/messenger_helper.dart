@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:biphip_messenger/controllers/common/call_audio_service.dart';
 import 'package:biphip_messenger/controllers/common/socket_controller.dart';
 import 'package:biphip_messenger/controllers/messenger/messenger_controller.dart';
 import 'package:biphip_messenger/utils/constants/imports.dart';
@@ -35,6 +36,7 @@ class MessengerHelper {
   }
 
   Future<void> hangUp() async {
+    await AudioService().stopAudio();
     // Stop localRenderer tracks
     if (messengerController.localRenderer.srcObject != null) {
       List<webRTC.MediaStreamTrack> localTracks = messengerController.localRenderer.srcObject!.getTracks();

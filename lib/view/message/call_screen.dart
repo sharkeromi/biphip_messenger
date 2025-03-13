@@ -175,11 +175,22 @@ class CallScreen extends StatelessWidget {
                     Positioned(
                       top: 50,
                       right: 20,
-                      child: SizedBox(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         height: 200,
-                        width: 150,
-                        child:
-                            messengerController.isLocalFeedStreaming.value ? RTCVideoView(messengerController.localRenderer, mirror: true) : const SizedBox(),
+                        width: 130,
+                        child: messengerController.isLocalFeedStreaming.value
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: RTCVideoView(
+                                  messengerController.localRenderer,
+                                  mirror: true,
+                                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                                ),
+                              )
+                            : const SizedBox(),
                       ),
                     ),
                 ],
