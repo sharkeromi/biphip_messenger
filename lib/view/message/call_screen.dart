@@ -92,60 +92,64 @@ class CallScreen extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 50),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment:
+                              messengerController.callState.value == CallStatus.inCAll.name ? MainAxisAlignment.spaceBetween : MainAxisAlignment.center,
                           children: [
-                            InkWell(
-                              onTap: () async {
-                                if (messengerController.isAudioCallState.value) {
-                                  await messengerController.switchToVideoCall(messengerController.callerID.value);
-                                } else {
-                                  await messengerController.switchToAudioCall(messengerController.callerID.value);
-                                }
-                              },
-                              child: Container(
-                                decoration: const BoxDecoration(color: cBlackColor, shape: BoxShape.circle),
-                                height: 70,
-                                width: 70,
-                                child: Center(
-                                  child: Icon(
-                                    messengerController.isAudioCallState.value ? Icons.videocam_off_rounded : Icons.videocam_rounded,
-                                    color: cWhiteColor,
+                            if (messengerController.callState.value == CallStatus.inCAll.name)
+                              InkWell(
+                                onTap: () async {
+                                  if (messengerController.isAudioCallState.value) {
+                                    await messengerController.switchToVideoCall(messengerController.callerID.value);
+                                  } else {
+                                    await messengerController.switchToAudioCall(messengerController.callerID.value);
+                                  }
+                                },
+                                child: Container(
+                                  decoration: const BoxDecoration(color: cBlackColor, shape: BoxShape.circle),
+                                  height: 70,
+                                  width: 70,
+                                  child: Center(
+                                    child: Icon(
+                                      messengerController.isAudioCallState.value ? Icons.videocam_off_rounded : Icons.videocam_rounded,
+                                      color: cWhiteColor,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            InkWell(
-                              onTap: () {
-                                MessengerHelper().switchCamera(messengerController.callerID.value);
-                              },
-                              child: Container(
-                                decoration: const BoxDecoration(color: cBlackColor, shape: BoxShape.circle),
-                                height: 70,
-                                width: 70,
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.cameraswitch_rounded,
-                                    color: cWhiteColor,
+                            if (messengerController.callState.value == CallStatus.inCAll.name)
+                              InkWell(
+                                onTap: () {
+                                  MessengerHelper().switchCamera(messengerController.callerID.value);
+                                },
+                                child: Container(
+                                  decoration: const BoxDecoration(color: cBlackColor, shape: BoxShape.circle),
+                                  height: 70,
+                                  width: 70,
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.cameraswitch_rounded,
+                                      color: cWhiteColor,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            InkWell(
-                              onTap: () {
-                                MessengerHelper().toggleMuteAudio();
-                              },
-                              child: Container(
-                                decoration: const BoxDecoration(color: cBlackColor, shape: BoxShape.circle),
-                                height: 70,
-                                width: 70,
-                                child: Center(
-                                  child: Icon(
-                                    messengerController.isMuted.value ? Icons.mic_off_rounded : Icons.mic,
-                                    color: cWhiteColor,
+                            if (messengerController.callState.value == CallStatus.inCAll.name)
+                              InkWell(
+                                onTap: () {
+                                  MessengerHelper().toggleMuteAudio();
+                                },
+                                child: Container(
+                                  decoration: const BoxDecoration(color: cBlackColor, shape: BoxShape.circle),
+                                  height: 70,
+                                  width: 70,
+                                  child: Center(
+                                    child: Icon(
+                                      messengerController.isMuted.value ? Icons.mic_off_rounded : Icons.mic,
+                                      color: cWhiteColor,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
                             InkWell(
                               onTap: () async {
                                 socket.emit('mobile-call-${messengerController.callerID.value}', {
