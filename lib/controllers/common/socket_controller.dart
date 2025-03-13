@@ -149,12 +149,24 @@ class SocketController {
       Get.find<MessengerController>().callState.value = data['callStatus'];
       if (data['callStatus'] == CallStatus.ringing.name) {
         Get.find<MessengerController>().onCallRing(data);
-      }else if (data['callStatus'] == CallStatus.decline.name) {
+      } else if (data['callStatus'] == CallStatus.decline.name) {
         Get.find<MessengerController>().onDeclineCall();
-      }else if (data['callStatus'] == CallStatus.hangUp.name) {
-       await Get.find<MessengerController>().onHangUpCall();
-      }else if(data['callStatus'] == CallStatus.inCAll.name){
-        Get.find<MessengerController>().onCallStart(data);
+      } else if (data['callStatus'] == CallStatus.hangUp.name) {
+        await Get.find<MessengerController>().onHangUpCall();
+      } else if (data['callStatus'] == CallStatus.inCAll.name) {
+        if (data["type"] == EmitType.answer.name) {
+          Get.find<MessengerController>().onCallStart(data);
+        } else if (data["type"] == "callSettings") {
+          if (data["data"] == "switchToAudio") {
+            Get.find<MessengerController>().onSwitchToAudioCall(data["userID"]);
+          } else if (data["data"] == "switchToVideo") {
+            if (data['sdp_type'] == "offer") {
+              Get.find<MessengerController>().onSwitchToVideoCall(data);
+            } else {
+              Get.find<MessengerController>().videoCallSwitchSDPSet(data);
+            }
+          }
+        }
       }
     });
   }

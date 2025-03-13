@@ -18,6 +18,22 @@ class MessengerHelper {
     }
   }
 
+  Future<void> intiVideoCallSwitcher() async {
+    var stream = await webRTC.navigator.mediaDevices.getUserMedia({'video': true, 'audio': true});
+
+    messengerController.localStream = stream;
+
+    messengerController.localRenderer.srcObject = stream;
+    messengerController.isLocalFeedStreaming.value = true;
+  }
+
+
+  Future<void> initAudioCallSwitcher() async {
+    var stream = await webRTC.navigator.mediaDevices.getUserMedia({'video': false, 'audio': true});
+
+    messengerController.localStream = stream;
+  }
+
   Future<void> hangUp() async {
     // Stop localRenderer tracks
     if (messengerController.localRenderer.srcObject != null) {
