@@ -281,6 +281,9 @@ const String kuDeactivateAccount = '/user/deactivate-account';
 const String kuGetRoomList = '/user/messenger/get-room-list';
 const String kuGetMessageList = '/user/messenger/get-messages-for-room';
 const String kuSendMessage = '/user/messenger/send-message';
+const String kuGetUserList = '/user/messenger/group/search-users-to-add';
+const String kuCreateGroup = '/user/messenger/group/create';
+const String kuAddMember = '/user/messenger/group/add-participants';
 
 /*
 |--------------------------------------------------------------------------

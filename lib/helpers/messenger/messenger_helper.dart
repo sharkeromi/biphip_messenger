@@ -3,6 +3,7 @@ import 'package:biphip_messenger/controllers/common/call_audio_service.dart';
 import 'package:biphip_messenger/controllers/common/socket_controller.dart';
 import 'package:biphip_messenger/controllers/messenger/messenger_controller.dart';
 import 'package:biphip_messenger/utils/constants/imports.dart';
+import 'package:biphip_messenger/utils/constants/routes.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart' as webRTC;
 
 class MessengerHelper {
@@ -27,7 +28,6 @@ class MessengerHelper {
     messengerController.localRenderer.srcObject = stream;
     messengerController.isLocalFeedStreaming.value = true;
   }
-
 
   Future<void> initAudioCallSwitcher() async {
     var stream = await webRTC.navigator.mediaDevices.getUserMedia({'video': false, 'audio': true});
@@ -106,5 +106,49 @@ class MessengerHelper {
         messengerController.isMuted.value = true;
       }
     }
+  }
+
+  Future<void> goToCreateGroup() async {
+    resetCreateGroup();
+    Get.toNamed(krCreateGroup);
+    await messengerController.getUserList();
+  }
+
+  void resetCreateGroup() {
+    messengerController.selectedUsers.clear();
+    messengerController.canCreateGroup.value = false;
+    messengerController.tempUserIndex.clear();
+  }
+
+  void checkCanCreateGroup() {
+    if (messengerController.selectedUsers.isNotEmpty && messengerController.groupNameTextEditingController.text.trim().isNotEmpty) {
+      messengerController.canCreateGroup.value = true;
+    } else {
+      messengerController.canCreateGroup.value = false;
+    }
+  }
+
+  void checkCanAddMember() {
+    if (messengerController.selectedUsers.isNotEmpty) {
+      messengerController.canCreateGroup.value = true;
+    } else {
+      messengerController.canCreateGroup.value = false;
+    }
+  }
+
+  void resetAddMember() {
+    messengerController.addMemberList.clear();
+    messengerController.selectedUsers.clear();
+    messengerController.canCreateGroup.value = false;
+    messengerController.tempUserIndex.clear();
+  }
+
+  Future<void> goToAddMember() async {
+    resetAddMember();
+    Get.toNamed(krAddMember);
+    await messengerController.getUserList();
+    messengerController.addMemberList.addAll(messengerController.userList
+        .where((user) => !messengerController.selectedRoomData.value!.participants!.any((member) => member.userId == user.id))
+        .toList());
   }
 }

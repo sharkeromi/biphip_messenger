@@ -116,7 +116,7 @@ class RoomData {
         lastMessageSenderId: json["last_message_sender_id"],
         updatedAt: json["updated_at"] == null ? null : DateTime.parse(json["updated_at"]),
         roomName: json["room_name"],
-        roomImage: json["room_image"] == null ? [] : List<String>.from(json["room_image"].where((x) => x != null && x is String)),
+        // roomImage: json["room_image"],
         roomUserId: json["room_user_id"],
         participants: json["participants"] == null ? [] : List<Participant>.from(json["participants"]!.map((x) => Participant.fromJson(x))),
         isDelivered: json["is_delivered"],
@@ -244,8 +244,8 @@ class LastMessage {
         fileUrls: List<dynamic>.from(json["file_urls"].map((x) => x)),
         reactions: Reactions.fromJson(json["reactions"]),
         reactors: List<dynamic>.from(json["reactors"].map((x) => x)),
-        sender: User.fromJson(json["sender"]),
-        mRoom: MRoom.fromJson(json["m_room"]),
+        sender: json["sender"] == null ? null : User.fromJson(json["sender"]),
+        mRoom: json["m_room"] == null ? null : MRoom.fromJson(json["m_room"]),
       );
 }
 
@@ -321,5 +321,17 @@ class Reactions {
 
   factory Reactions.fromJson(Map<String, dynamic> json) => Reactions(
         total: json["total"],
+      );
+}
+
+class GroupData {
+  RoomData? room;
+
+  GroupData({
+    this.room,
+  });
+
+  factory GroupData.fromJson(Map<String, dynamic> json) => GroupData(
+        room: RoomData.fromJson(json["room"]),
       );
 }

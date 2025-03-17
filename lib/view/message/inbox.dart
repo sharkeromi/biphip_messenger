@@ -1,4 +1,5 @@
 import 'package:biphip_messenger/controllers/messenger/messenger_controller.dart';
+import 'package:biphip_messenger/helpers/messenger/messenger_helper.dart';
 import 'package:biphip_messenger/utils/constants/imports.dart';
 import 'package:biphip_messenger/utils/constants/strings.dart';
 import 'package:biphip_messenger/view/message/widgets/empty_chat_view.dart';
@@ -31,6 +32,22 @@ class Inbox extends StatelessWidget {
                   onBack: () {
                     Get.back();
                   },
+                  action: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: h20),
+                      child: TextButton(
+                        style: kTextButtonStyle,
+                        onPressed: () async {
+                          MessengerHelper().goToCreateGroup();
+                        },
+                        child: Icon(
+                          Icons.group_add,
+                          color: cIconColor,
+                          size: isDeviceScreenLarge() ? 24 : 20,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               body: Stack(
@@ -59,10 +76,11 @@ class Inbox extends StatelessWidget {
                                           var item = messengerController.allRoomMessageList[index];
                                           return Obx(() => InboxContainer(
                                               index: index,
+                                              roomData: item['roomData'],
                                               dataChannel: item['dataChannel'],
                                               peerConnection: item['peerConnection'],
                                               roomID: messengerController.roomList[index].id!,
-                                              userID: messengerController.roomList[index].roomUserId!,
+                                              userID: messengerController.roomList[index].roomUserId ?? 0,
                                               userName: messengerController.roomList[index].roomName!,
                                               userImage: (messengerController.roomList[index].roomImage != null &&
                                                       messengerController.roomList[index].roomImage!.isNotEmpty)

@@ -3,6 +3,7 @@ import 'package:biphip_messenger/controllers/common/socket_controller.dart';
 import 'package:biphip_messenger/controllers/messenger/messenger_controller.dart';
 import 'package:biphip_messenger/models/messenger/message_list_model.dart';
 import 'package:biphip_messenger/utils/constants/imports.dart';
+import 'package:biphip_messenger/utils/constants/routes.dart';
 import 'package:biphip_messenger/utils/constants/strings.dart';
 import 'package:biphip_messenger/view/message/widgets/chat_textfield.dart';
 import 'package:biphip_messenger/widgets/common/utils/custom_app_bar.dart';
@@ -136,7 +137,9 @@ class MessageScreen extends StatelessWidget {
                     padding: const EdgeInsets.only(right: h20),
                     child: TextButton(
                       style: kTextButtonStyle,
-                      onPressed: () {},
+                      onPressed: () {
+                        Get.toNamed(krRoomDetails);
+                      },
                       child: Icon(
                         BipHip.info,
                         color: cPrimaryColor,
@@ -165,19 +168,29 @@ class MessageScreen extends StatelessWidget {
                                       itemBuilder: (context, index) {
                                         MessageData messages =
                                             messengerController.allRoomMessageList[messengerController.selectedRoomIndex.value]["messages"][index];
-                                        return CustomBubbleNormal(
-                                          userImage: (messengerController.selectedReceiver.value?.roomImage != null &&
-                                                  messengerController.selectedReceiver.value!.roomImage!.isNotEmpty)
-                                              ? messengerController.selectedReceiver.value!.roomImage![0]
-                                              : null,
-                                          text: messages.text.toString(),
-                                          isSender: messages.senderId == Get.find<GlobalController>().userId.value ? true : false,
-                                          color: messages.senderId == Get.find<GlobalController>().userId.value ? cPrimaryColor : cNeutralColor,
-                                          tail: false,
-                                          textStyle: regular16TextStyle(
-                                            messages.senderId == Get.find<GlobalController>().userId.value ? cWhiteColor : cBlackColor,
-                                          ),
-                                        );
+                                        return messages.senderId == null
+                                            ? Padding(
+                                                padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: h20),
+                                                child: Align(
+                                                    alignment: Alignment.center,
+                                                    child: Text(messages.text!,
+                                                        overflow: TextOverflow.clip,
+                                                        textAlign: TextAlign.center,
+                                                        style: regular14TextStyle(cSmallBodyTextColor))),
+                                              )
+                                            : CustomBubbleNormal(
+                                                userImage: (messengerController.selectedReceiver.value?.roomImage != null &&
+                                                        messengerController.selectedReceiver.value!.roomImage!.isNotEmpty)
+                                                    ? messengerController.selectedReceiver.value!.roomImage![0]
+                                                    : null,
+                                                text: messages.text.toString(),
+                                                isSender: messages.senderId == Get.find<GlobalController>().userId.value ? true : false,
+                                                color: messages.senderId == Get.find<GlobalController>().userId.value ? cPrimaryColor : cNeutralColor,
+                                                tail: false,
+                                                textStyle: regular16TextStyle(
+                                                  messages.senderId == Get.find<GlobalController>().userId.value ? cWhiteColor : cBlackColor,
+                                                ),
+                                              );
                                       },
                                     ),
                                     if (messengerController.isMessageListLoading.value)

@@ -9,8 +9,10 @@ import 'package:biphip_messenger/controllers/common/sp_controller.dart';
 import 'package:biphip_messenger/helpers/messenger/messenger_helper.dart';
 import 'package:biphip_messenger/models/common/common_data_model.dart';
 import 'package:biphip_messenger/models/common/common_error_model.dart';
+import 'package:biphip_messenger/models/common/common_user_model.dart';
 import 'package:biphip_messenger/models/messenger/message_list_model.dart';
 import 'package:biphip_messenger/models/messenger/room_list_model.dart';
+import 'package:biphip_messenger/models/messenger/user_list_model.dart';
 import 'package:biphip_messenger/utils/constants/imports.dart';
 import 'package:biphip_messenger/utils/constants/routes.dart';
 import 'package:biphip_messenger/utils/constants/strings.dart';
@@ -113,7 +115,6 @@ class MessengerController extends GetxController {
   }
 
   // Send through API
-  // Send through API
   final RxBool isSendMessageLoading = RxBool(false);
   Future<void> sendBatchMessages(message) async {
     try {
@@ -150,6 +151,7 @@ class MessengerController extends GetxController {
   void geAllRoomMessages() {
     for (int i = 0; i < roomList.length; i++) {
       allRoomMessageList.add({
+        "roomData": roomList[i],
         "roomID": roomList[i].id,
         "userID": roomList[i].roomUserId,
         "dataChannelLabel": "",
@@ -886,5 +888,131 @@ class MessengerController extends GetxController {
 
     peerConnection = allRoomMessageListMap[data["userID"]]!['peerConnection'];
     await peerConnection!.setRemoteDescription(RTCSessionDescription(data['sdp'], data['sdp_type']));
+  }
+
+  // Get user list
+  final RxBool isUserListLoading = RxBool(false);
+  final RxBool isUserListScroller = RxBool(false);
+  final RxList<User> userList = RxList<User>([]);
+  final Rx<UserListModel?> userListData = Rx<UserListModel?>(null);
+  final RxList<User> selectedUsers = RxList<User>([]);
+  final RxList tempUserIndex = RxList([]);
+  final RxBool canCreateGroup = RxBool(false);
+  final TextEditingController groupNameTextEditingController = TextEditingController();
+  Future<void> getUserList() async {
+    try {
+      isUserListLoading.value = true;
+      String suffixUrl = '?take=15';
+      String? token = await spController.getBearerToken();
+      var response = await apiController.commonApiCall(
+        requestMethod: kGet,
+        token: token,
+        url: kuGetUserList + suffixUrl,
+      ) as CommonDM;
+      if (response.success == true) {
+        userList.clear();
+        isUserListScroller.value = false;
+        userListData.value = UserListModel.fromJson(response.data);
+        userList.addAll(userListData.value!.users!.data!);
+        isUserListLoading.value = false;
+      } else {
+        isUserListLoading.value = false;
+        ErrorModel errorModel = ErrorModel.fromJson(response.data);
+        if (errorModel.errors.isEmpty) {
+          globalController.showSnackBar(title: ksError.tr, message: response.message, color: cRedColor);
+        } else {
+          globalController.showSnackBar(title: ksError.tr, message: errorModel.errors[0].message, color: cRedColor);
+        }
+      }
+    } catch (e) {
+      isUserListLoading.value = true;
+      ll('getUserList error: $e');
+    }
+  }
+
+  final RxBool isCreateGroupLoading = RxBool(false);
+  final Rx<GroupData?> groupData = Rx<GroupData?>(null);
+  Future<void> createGroup() async {
+    List users = [];
+    users.add(globalController.userId.value);
+    for (int i = 0; i < selectedUsers.length; i++) {
+      users.add(selectedUsers[i].id);
+    }
+    try {
+      isCreateGroupLoading.value = true;
+      String? token = await spController.getBearerToken();
+      Map<String, dynamic> body = {
+        'name': groupNameTextEditingController.text.trim(),
+        'participant_ids': users.join(','),
+      };
+      var response = await apiController.commonApiCall(
+        requestMethod: kPost,
+        url: kuCreateGroup,
+        body: body,
+        token: token,
+      ) as CommonDM;
+      if (response.success == true) {
+        groupData.value = GroupData.fromJson(response.data);
+        roomList.insert(0, groupData.value!.room!);
+        isCreateGroupLoading.value = false;
+        Get.back();
+        globalController.showSnackBar(title: ksSuccess.tr, message: response.message, color: cGreenColor);
+      } else {
+        isCreateGroupLoading.value = false;
+        ErrorModel errorModel = ErrorModel.fromJson(response.data);
+        if (errorModel.errors.isEmpty) {
+          globalController.showSnackBar(title: ksError.tr, message: response.message, color: cRedColor);
+        } else {
+          globalController.showSnackBar(title: ksError.tr, message: errorModel.errors[0].message, color: cRedColor);
+        }
+      }
+    } catch (e) {
+      isCreateGroupLoading.value = false;
+      ll('createGroup error: $e');
+    }
+  }
+
+  final Rx<RoomData?> selectedRoomData = Rx<RoomData?>(null);
+  final RxBool canAddMember = RxBool(false);
+  final RxList<User> addMemberList = RxList<User>([]);
+  final RxBool isAddMemberLoading = RxBool(false);
+
+  Future<void> addMember() async {
+    List users = [];
+    for (int i = 0; i < selectedUsers.length; i++) {
+      users.add(selectedUsers[i].id);
+    }
+    try {
+      isAddMemberLoading.value = true;
+      String? token = await spController.getBearerToken();
+      Map<String, dynamic> body = {
+        'room_id': selectedRoomData.value!.id,
+        'participant_ids': users.join(','),
+      };
+      var response = await apiController.commonApiCall(
+        requestMethod: kPost,
+        url: kuAddMember,
+        body: body,
+        token: token,
+      ) as CommonDM;
+      if (response.success == true) {
+        // groupData.value = GroupData.fromJson(response.data);
+        // roomList.insert(0, groupData.value!.room!);
+        isAddMemberLoading.value = false;
+        Get.back();
+        globalController.showSnackBar(title: ksSuccess.tr, message: response.message, color: cGreenColor);
+      } else {
+        isAddMemberLoading.value = false;
+        ErrorModel errorModel = ErrorModel.fromJson(response.data);
+        if (errorModel.errors.isEmpty) {
+          globalController.showSnackBar(title: ksError.tr, message: response.message, color: cRedColor);
+        } else {
+          globalController.showSnackBar(title: ksError.tr, message: errorModel.errors[0].message, color: cRedColor);
+        }
+      }
+    } catch (e) {
+      isAddMemberLoading.value = false;
+      ll('addMember error: $e');
+    }
   }
 }

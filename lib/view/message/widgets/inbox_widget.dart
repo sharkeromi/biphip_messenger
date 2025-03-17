@@ -21,7 +21,7 @@ class InboxContainer extends StatelessWidget {
     required this.index,
     required this.dataChannel,
     this.peerConnection,
-    required this.receiverData,
+    required this.receiverData, required this.roomData,
   });
   final String userName, userImage;
   final RxString message;
@@ -32,12 +32,14 @@ class InboxContainer extends StatelessWidget {
   final RTCDataChannel? dataChannel;
   final RoomData receiverData;
   final RTCPeerConnection? peerConnection;
+  final RoomData roomData;
   final MessengerController messengerController = Get.find<MessengerController>();
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () async {
+        messengerController.selectedRoomData.value = roomData;
         messengerController.selectedReceiver.value = receiverData;
         messengerController.selectedRoomIndex.value = index;
          if (dataChannel == null) {

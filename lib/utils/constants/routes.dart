@@ -2,10 +2,13 @@ import 'package:biphip_messenger/utils/constants/imports.dart';
 import 'package:biphip_messenger/view/auth/login/login.dart';
 import 'package:biphip_messenger/view/home/homepage.dart';
 import 'package:biphip_messenger/view/intro/splash_screen.dart';
+import 'package:biphip_messenger/view/message/add_member_screen.dart';
 import 'package:biphip_messenger/view/message/call_screen.dart';
+import 'package:biphip_messenger/view/message/create_group_screen.dart';
 import 'package:biphip_messenger/view/message/inbox.dart';
 import 'package:biphip_messenger/view/message/message_screen.dart';
 import 'package:biphip_messenger/view/message/ringing_screen.dart';
+import 'package:biphip_messenger/view/message/room_details_screen.dart';
 
 const String krSplashScreen = '/splash-screen';
 const String krIntroductionScreen = '/introduction-screen';
@@ -218,6 +221,9 @@ const String krReviewPostsSettingsPage = "/review-posts-settings-page";
 const String krLanguageListRadioPage = "/language-list-page-radio";
 const String krLanguageListCheckboxPage = "/language-list-page-checkbox";
 const String krSelectCustomAudience = "/select-custom-audience";
+const String krCreateGroup = "/create-group";
+const String krRoomDetails = "/room-details";
+const String krAddMember = "/add-member";
 
 List<GetPage<dynamic>>? routes = [
   //* info:: auth screens
@@ -231,4 +237,7 @@ List<GetPage<dynamic>>? routes = [
   GetPage(name: krMessages, page: () => MessageScreen(), transition: Transition.noTransition),
   GetPage(name: krRingingScreen, page: () => RingingScreen(), transition: Transition.noTransition),
   GetPage(name: krCallScreen, page: () => CallScreen(), transition: Transition.noTransition),
+  GetPage(name: krCreateGroup, page: () => CreateGroupScreen(), transition: Transition.rightToLeft),
+  GetPage(name: krRoomDetails, page: () => RoomDetailsScreen(), transition: Transition.rightToLeft),
+  GetPage(name: krAddMember, page: () => AddMemberScreen(), transition: Transition.rightToLeft),
 ];
