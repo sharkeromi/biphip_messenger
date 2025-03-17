@@ -986,7 +986,7 @@ class MessengerController extends GetxController {
       isAddMemberLoading.value = true;
       String? token = await spController.getBearerToken();
       Map<String, dynamic> body = {
-        'room_id': selectedRoomData.value!.id,
+        'room_id': selectedRoomData.value!.id.toString(),
         'participant_ids': users.join(','),
       };
       var response = await apiController.commonApiCall(
