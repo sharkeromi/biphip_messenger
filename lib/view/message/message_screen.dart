@@ -110,7 +110,7 @@ class MessageScreen extends StatelessWidget {
                     child: TextButton(
                       style: kTextButtonStyle,
                       onPressed: () {
-                        messengerController.ringUser(messengerController.selectedReceiver.value!.roomUserId, CallType.video.name);
+                        messengerController.ringUser(messengerController.selectedReceiver.value!.id, CallType.video.name);
                       },
                       child: Icon(
                         BipHip.video,
@@ -124,7 +124,7 @@ class MessageScreen extends StatelessWidget {
                     child: TextButton(
                       style: kTextButtonStyle,
                       onPressed: () {
-                        messengerController.ringUser(messengerController.selectedReceiver.value!.roomUserId, CallType.audio.name);
+                        messengerController.ringUser(messengerController.selectedReceiver.value!.id, CallType.audio.name);
                       },
                       child: Icon(
                         BipHip.phoneFill,

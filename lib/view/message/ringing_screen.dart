@@ -73,6 +73,7 @@ class RingingScreen extends StatelessWidget {
                                 onTap: () {
                                   socket.emit('mobile-call-${messengerController.callerID.value}', {
                                     'userID': Get.find<GlobalController>().userId.value,
+                                    'roomID': messengerController.roomID.value,
                                     'callStatus': CallStatus.decline.name,
                                   });
                                   Get.back();
@@ -91,7 +92,7 @@ class RingingScreen extends StatelessWidget {
                               ),
                               InkWell(
                                 onTap: () {
-                                  messengerController.onAcceptCall(messengerController.callerID.value);
+                                  messengerController.onAcceptCall(messengerController.roomID.value);
                                 },
                                 child: Container(
                                   decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),

@@ -99,9 +99,9 @@ class CallScreen extends StatelessWidget {
                               InkWell(
                                 onTap: () async {
                                   if (messengerController.isAudioCallState.value) {
-                                    await messengerController.switchToVideoCall(messengerController.callerID.value);
+                                    await messengerController.switchToVideoCall(messengerController.roomID.value);
                                   } else {
-                                    await messengerController.switchToAudioCall(messengerController.callerID.value);
+                                    await messengerController.switchToAudioCall(messengerController.roomID.value);
                                   }
                                 },
                                 child: Container(
@@ -119,7 +119,7 @@ class CallScreen extends StatelessWidget {
                             if (messengerController.callState.value == CallStatus.inCAll.name)
                               InkWell(
                                 onTap: () {
-                                  MessengerHelper().switchCamera(messengerController.callerID.value);
+                                  MessengerHelper().switchCamera();
                                 },
                                 child: Container(
                                   decoration: const BoxDecoration(color: cBlackColor, shape: BoxShape.circle),
@@ -154,6 +154,7 @@ class CallScreen extends StatelessWidget {
                               onTap: () async {
                                 socket.emit('mobile-call-${messengerController.callerID.value}', {
                                   'userID': Get.find<GlobalController>().userId.value,
+                                  'roomID': messengerController.roomID.value,
                                   'callStatus': CallStatus.hangUp.name,
                                 });
                                 await MessengerHelper().hangUp();

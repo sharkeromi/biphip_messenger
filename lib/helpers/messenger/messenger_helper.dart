@@ -86,7 +86,7 @@ class MessengerHelper {
     await webRTC.Helper.setSpeakerphoneOn(false);
   }
 
-  Future<void> switchCamera(userID) async {
+  Future<void> switchCamera() async {
     if (messengerController.localStream != null && messengerController.localStream!.getVideoTracks().isNotEmpty) {
       var videoTrack = messengerController.localStream!.getVideoTracks().first;
       webRTC.Helper.switchCamera(videoTrack);
