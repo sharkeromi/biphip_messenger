@@ -52,9 +52,8 @@ class RoomDetailsScreen extends StatelessWidget {
                             ),
                             child: ClipOval(
                               child: Image.network(
-                                (messengerController.selectedRoomData.value!.roomImage != null &&
-                                        messengerController.selectedRoomData.value!.roomImage!.isNotEmpty)
-                                    ? messengerController.selectedRoomData.value!.roomImage![0]
+                                (messengerController.selectedRoom.value!.roomImage != null && messengerController.selectedRoom.value!.roomImage!.isNotEmpty)
+                                    ? messengerController.selectedRoom.value!.roomImage![0]
                                     : "default_image_url",
                                 fit: BoxFit.cover,
                                 filterQuality: FilterQuality.high,
@@ -71,7 +70,7 @@ class RoomDetailsScreen extends StatelessWidget {
                           ),
                           kH16sizedBox,
                           Text(
-                            messengerController.selectedRoomData.value!.roomName ?? "",
+                            messengerController.selectedRoom.value!.roomName ?? "",
                             style: semiBold20TextStyle(cBlackColor),
                           ),
                           kH16sizedBox,
@@ -90,7 +89,7 @@ class RoomDetailsScreen extends StatelessWidget {
                                   onPressed: () {},
                                   buttonText: ksVideo.tr,
                                 ),
-                                if (messengerController.selectedRoomData.value!.type == 2)
+                                if (messengerController.selectedRoom.value!.type == 2)
                                   RoomDetailsActionButton(
                                     icon: Icons.person_add_alt_rounded,
                                     onPressed: () async {
@@ -98,7 +97,7 @@ class RoomDetailsScreen extends StatelessWidget {
                                     },
                                     buttonText: ksAdd.tr,
                                   ),
-                                if (messengerController.selectedRoomData.value!.type == 1)
+                                if (messengerController.selectedRoom.value!.type == 1)
                                   RoomDetailsActionButton(
                                     icon: Icons.person_2_rounded,
                                     onPressed: () {},

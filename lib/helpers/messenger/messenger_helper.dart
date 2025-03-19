@@ -148,7 +148,7 @@ class MessengerHelper {
     Get.toNamed(krAddMember);
     await messengerController.getUserList();
     messengerController.addMemberList.addAll(messengerController.userList
-        .where((user) => !messengerController.selectedRoomData.value!.participants!.any((member) => member.userId == user.id))
+        .where((user) => !messengerController.selectedRoom.value!.participants!.any((member) => member.userId == user.id))
         .toList());
   }
 }

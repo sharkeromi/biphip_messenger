@@ -20,8 +20,7 @@ class InboxContainer extends StatelessWidget {
     required this.roomID,
     required this.index,
     required this.dataChannel,
-    this.peerConnection,
-    required this.receiverData,
+    this.peerConnectionList,
     required this.roomData,
   });
   final String userName, userImage;
@@ -31,8 +30,7 @@ class InboxContainer extends StatelessWidget {
   final int userID, roomID, index;
   final DateTime lastMessageTime;
   final RTCDataChannel? dataChannel;
-  final RoomData receiverData;
-  final RTCPeerConnection? peerConnection;
+  final List<dynamic>? peerConnectionList;
   final RoomData roomData;
   final MessengerController messengerController = Get.find<MessengerController>();
 
@@ -40,17 +38,11 @@ class InboxContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () async {
-        ll(peerConnection);
-        ll(dataChannel);
-        ll(dataChannel?.label);
-        messengerController.selectedRoomData.value = roomData;
-        messengerController.selectedReceiver.value = receiverData;
+        messengerController.selectedRoom.value = roomData;
         messengerController.selectedRoomIndex.value = index;
         if (roomData.type == 1) {
-          if (dataChannel == null) {
+          if (peerConnectionList![0]["dataChannel"] == null) {
             messengerController.connectUser(userID, roomID);
-          } else {
-            messengerController.targetDataChannel = dataChannel;
           }
         } else {
           messengerController.connectGroupUser(roomID);

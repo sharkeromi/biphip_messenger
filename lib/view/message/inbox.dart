@@ -78,7 +78,7 @@ class Inbox extends StatelessWidget {
                                               index: index,
                                               roomData: item['roomData'],
                                               dataChannel: item['dataChannel'],
-                                              peerConnection: item['peerConnection'],
+                                              peerConnectionList: item['peerConnectionList'],
                                               roomID: messengerController.roomList[index].id!,
                                               userID: messengerController.roomList[index].roomUserId ?? 0,
                                               userName: messengerController.roomList[index].roomName!,
@@ -91,7 +91,6 @@ class Inbox extends StatelessWidget {
                                               isMute: false,
                                               isLastMessageSelf: false,
                                               isSeen: item['isSeen'],
-                                              receiverData: messengerController.roomList[index],
                                               lastMessageTime: messengerController.roomList[index].updatedAt!));
                                         })),
                                   ),

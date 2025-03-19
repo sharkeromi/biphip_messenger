@@ -119,7 +119,7 @@ class ChatTextField extends StatelessWidget {
                       onTap: messengerController.isSendEnabled.value
                           ? () {
                               messengerController.sendMessage(
-                                  messengerController.messageTextEditingController.text.trim(), messengerController.targetDataChannel!);
+                                  messengerController.messageTextEditingController.text.trim(), messengerController.selectedRoom.value!.id);
                             }
                           : null,
                       child: const Icon(

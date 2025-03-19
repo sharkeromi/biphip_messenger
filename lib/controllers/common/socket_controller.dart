@@ -46,47 +46,52 @@ class SocketController {
       if (data['type'] == EmitType.status.name) {
         Get.find<GlobalController>().populatePeerList(data['userID']);
       } else if (data['type'] == EmitType.offer.name) {
-        RTCPeerConnection? peerConnection;
-        Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in Get.find<MessengerController>().allRoomMessageList) room['roomID']: room};
+        Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in messengerController.allRoomMessageList) room['roomID']: room};
+        Map<String, dynamic>? room = allRoomMessageListMap[data["roomID"]];
+      List<dynamic> peerConnectionList = room!["peerConnectionList"];
+
+      Map<String, dynamic>? participant = peerConnectionList.firstWhere(
+        (participant) => participant["participantId"] == data["userID"],
+        orElse: () => {},
+      );
 
         ll("GOT NEW OFFER: $data");
         if (allRoomMessageListMap.containsKey(data['roomID'])) {
-          if (allRoomMessageListMap[data['roomID']]!['peerConnection'] != null) {
-            peerConnection = allRoomMessageListMap[data['roomID']]!['peerConnection'];
+          if (participant!['peerConnection'] != null) {
+            peerConnection = participant['peerConnection'];
           } else {
-            peerConnection = await createPeerConnection(Get.find<MessengerController>().configuration);
+            peerConnection = await createPeerConnection(messengerController.configuration);
             ll("CREATED NEW PEER CoNNECTION");
-            allRoomMessageListMap[data['roomID']]!['peerConnection'] = peerConnection;
-            Get.find<MessengerController>().registerPeerConnectionListeners(peerConnection, data['userID'], data['roomID']);
+            participant['peerConnection'] = peerConnection;
+            messengerController.registerPeerConnectionListeners(peerConnection, data['userID'], data['roomID']);
           }
         } else {
-          peerConnection = await createPeerConnection(Get.find<MessengerController>().configuration);
+          peerConnection = await createPeerConnection(messengerController.configuration);
           ll("CREATED NEW PEER CoNNECTION");
-          allRoomMessageListMap[data['roomID']]!['peerConnection'] = peerConnection;
-          Get.find<MessengerController>().registerPeerConnectionListeners(peerConnection, data['userID'], data['roomID']);
+          participant!['peerConnection'] = peerConnection;
+          messengerController.registerPeerConnectionListeners(peerConnection, data['userID'], data['roomID']);
         }
 
         peerConnection?.onDataChannel = (channel) {
           ll("On DATA Channel: ${channel.label}");
 
-          Get.find<MessengerController>().setUpRoomDataChannel(data['roomID'], channel);
+          messengerController.setUpRoomDataChannel(data['roomID'], data['userID'], channel);
           channel.onDataChannelState = (RTCDataChannelState state) {
-            Get.find<MessengerController>().handleRTCEvents(state);
+            messengerController.handleRTCEvents(state);
           };
 
           channel.onMessage = (RTCDataChannelMessage message) {
             ll('Received message: ${message.text}');
             ll("USER ID: ${data['userID']} DATA CHANNEL: ${channel.label}");
-            int index = Get.find<MessengerController>().allRoomMessageList.indexWhere((room) => room['roomID'] == data['roomID']);
+            int index = messengerController.allRoomMessageList.indexWhere((room) => room['roomID'] == data['roomID']);
             if (index != -1) {
               ll("here");
-              globalController.showSnackBar(
-                  title: Get.find<MessengerController>().allRoomMessageList[index]["userName"], message: message.text, color: Colors.green);
-              Get.find<MessengerController>().allRoomMessageList[index]["isSeen"] = false.obs;
-              Get.find<MessengerController>().allRoomMessageList[index]["messages"].insert(
-                    0,
-                    MessageData(text: message.text, senderId: data['userID'], messageText: message.text, senderImage: data['userImage']),
-                  );
+              globalController.showSnackBar(title: messengerController.allRoomMessageList[index]["userName"], message: message.text, color: Colors.green);
+              messengerController.allRoomMessageList[index]["isSeen"] = false.obs;
+              messengerController.allRoomMessageList[index]["messages"].insert(
+                0,
+                MessageData(text: message.text, senderId: data['userID'], messageText: message.text, senderImage: data['userImage']),
+              );
             }
           };
         };
@@ -110,8 +115,15 @@ class SocketController {
         };
       } else if (data['type'] == EmitType.answer.name) {
         ll("GOT NEW ANSWER: $data");
-        Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in Get.find<MessengerController>().allRoomMessageList) room['roomID']: room};
-        peerConnection = allRoomMessageListMap[data['roomID']]!['peerConnection'];
+        Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in messengerController.allRoomMessageList) room['roomID']: room};
+        Map<String, dynamic>? room = allRoomMessageListMap[data["roomID"]];
+      List<dynamic> peerConnectionList = room!["peerConnectionList"];
+
+      Map<String, dynamic>? participant = peerConnectionList.firstWhere(
+        (participant) => participant["participantId"] == data["userID"],
+        orElse: () => {},
+      );
+        peerConnection = participant!['peerConnection'];
         ll("PC null: ${peerConnection == null}");
         var answer = RTCSessionDescription(
           data['data']['sdp'],
@@ -133,10 +145,17 @@ class SocketController {
         }
       } else if (data['type'] == EmitType.candidate.name) {
         ll("GOT NEW CANDIDATE: $data");
-        Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in Get.find<MessengerController>().allRoomMessageList) room['roomID']: room};
-        if (allRoomMessageListMap[data['roomID']]!['peerConnection'] != null) {
+        Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in messengerController.allRoomMessageList) room['roomID']: room};
+         Map<String, dynamic>? room = allRoomMessageListMap[data["roomID"]];
+      List<dynamic> peerConnectionList = room!["peerConnectionList"];
+
+      Map<String, dynamic>? participant = peerConnectionList.firstWhere(
+        (participant) => participant["participantId"] == data["userID"],
+        orElse: () => {},
+      );
+        if (participant!['peerConnection'] != null) {
           ll("PC already created");
-          peerConnection = allRoomMessageListMap[data['roomID']]!['peerConnection'];
+          peerConnection = participant['peerConnection'];
         }
         peerConnection!.addCandidate(
           RTCIceCandidate(
@@ -149,24 +168,24 @@ class SocketController {
     });
 
     socket.on('mobile-call-${Get.find<GlobalController>().userId.value}', (data) async {
-      Get.find<MessengerController>().callState.value = data['callStatus'];
+      messengerController.callState.value = data['callStatus'];
       if (data['callStatus'] == CallStatus.ringing.name) {
-        Get.find<MessengerController>().onCallRing(data);
+        messengerController.onCallRing(data);
       } else if (data['callStatus'] == CallStatus.decline.name) {
-        Get.find<MessengerController>().onDeclineCall();
+        messengerController.onDeclineCall();
       } else if (data['callStatus'] == CallStatus.hangUp.name) {
-        await Get.find<MessengerController>().onHangUpCall();
+        await messengerController.onHangUpCall();
       } else if (data['callStatus'] == CallStatus.inCAll.name) {
         if (data["type"] == EmitType.answer.name) {
-          Get.find<MessengerController>().onCallStart(data);
+          messengerController.onCallStart(data);
         } else if (data["type"] == "callSettings") {
           if (data["data"] == "switchToAudio") {
-            Get.find<MessengerController>().onSwitchToAudioCall(data["roomID"]);
+            messengerController.onSwitchToAudioCall(data["roomID"]);
           } else if (data["data"] == "switchToVideo") {
             if (data['sdp_type'] == "offer") {
-              Get.find<MessengerController>().onSwitchToVideoCall(data);
+              messengerController.onSwitchToVideoCall(data);
             } else {
-              Get.find<MessengerController>().videoCallSwitchSDPSet(data);
+              messengerController.videoCallSwitchSDPSet(data);
             }
           }
         }
@@ -184,9 +203,9 @@ class SocketController {
         orElse: () => {},
       );
       if (participant!["peerConnection"] == null) {
-        peerConnection = await createPeerConnection(Get.find<MessengerController>().configuration);
+        peerConnection = await createPeerConnection(messengerController.configuration);
         participant["peerConnection"] = peerConnection;
-        Get.find<MessengerController>().registerGroupPeerConnectionListeners(peerConnection, data['userID'], data["roomID"]);
+        messengerController.registerGroupPeerConnectionListeners(peerConnection, data['userID'], data["roomID"]);
       } else {
         peerConnection = participant["peerConnection"];
       }
@@ -194,25 +213,23 @@ class SocketController {
       if (data['type'] == EmitType.offer.name) {
         peerConnection?.onDataChannel = (channel) {
           ll("On DATA Channel: ${channel.label}");
-          participant["dataChannel"] = channel;
-          participant["dataChannelLabel"] = channel.label;
+          messengerController.setUpRoomDataChannel(data['roomID'], data['userID'], channel);
           channel.onDataChannelState = (RTCDataChannelState state) {
-            Get.find<MessengerController>().handleRTCEvents(state);
+            messengerController.handleRTCEvents(state);
           };
 
           channel.onMessage = (RTCDataChannelMessage message) {
             ll('Received Group message: ${message.text}');
             ll("USER ID: ${data['userID']} DATA CHANNEL: ${channel.label}");
-            int index = Get.find<MessengerController>().allRoomMessageList.indexWhere((room) => room['roomID'] == data['roomID']);
+            int index = messengerController.allRoomMessageList.indexWhere((room) => room['roomID'] == data['roomID']);
             if (index != -1) {
-              globalController.showSnackBar(
-                  title: Get.find<MessengerController>().allRoomMessageList[index]["userName"], message: message.text, color: Colors.green);
-              Get.find<MessengerController>().allRoomMessageList[index]["isSeen"] = false.obs;
-              Get.find<MessengerController>().allRoomMessageList[index]["messages"].insert(
-                    0,
-                    //todo: set user image
-                    MessageData(text: message.text, senderId: data['userID'], messageText: message.text, senderImage: data['userImage']),
-                  );
+              globalController.showSnackBar(title: messengerController.allRoomMessageList[index]["userName"], message: message.text, color: Colors.green);
+              messengerController.allRoomMessageList[index]["isSeen"] = false.obs;
+              messengerController.allRoomMessageList[index]["messages"].insert(
+                0,
+                //todo: set user image
+                MessageData(text: message.text, senderId: data['userID'], messageText: message.text, senderImage: data['userImage']),
+              );
             }
           };
         };
@@ -242,7 +259,7 @@ class SocketController {
         await peerConnection?.setRemoteDescription(answer);
         setGroupPeerConnection(data['roomID'], data['userID'], peerConnection);
         for (int i = 0; i < globalController.iceCandidateList.length; i++) {
-          socket.emit('mobile-chat-peer-exchange-${data['userID']}', {
+          socket.emit('group-chat-${data['userID']}', {
             'userID': Get.find<GlobalController>().userId.value,
             'roomID': data['roomID'],
             'type': EmitType.candidate.name,
@@ -254,8 +271,8 @@ class SocketController {
           });
         }
       } else if (data['type'] == EmitType.candidate.name) {
-         ll("GOT NEW CANDIDATE: $data");
-       await  peerConnection!.addCandidate(
+        ll("GOT NEW CANDIDATE: $data");
+        await peerConnection!.addCandidate(
           RTCIceCandidate(
             data['data']['candidate'],
             data['data']['sdpMid'],

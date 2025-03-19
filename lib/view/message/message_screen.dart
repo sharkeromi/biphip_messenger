@@ -45,10 +45,9 @@ class MessageScreen extends StatelessWidget {
                               color: cBlackColor,
                               shape: BoxShape.circle,
                             ),
-                            child: messengerController.selectedReceiver.value?.roomImage != null &&
-                                    messengerController.selectedReceiver.value!.roomImage!.isNotEmpty
+                            child: messengerController.selectedRoom.value?.roomImage != null && messengerController.selectedRoom.value!.roomImage!.isNotEmpty
                                 ? Image.network(
-                                    messengerController.selectedReceiver.value!.roomImage![0].toString(),
+                                    messengerController.selectedRoom.value!.roomImage![0].toString(),
                                     fit: BoxFit.cover,
                                     errorBuilder: (context, error, stackTrace) => const Icon(
                                       BipHip.user,
@@ -87,9 +86,9 @@ class MessageScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          messengerController.selectedReceiver.value!.roomName!.length > 14
-                              ? "${messengerController.selectedReceiver.value!.roomName!.substring(0, 14)}..."
-                              : messengerController.selectedReceiver.value!.roomName!,
+                          messengerController.selectedRoom.value!.roomName!.length > 14
+                              ? "${messengerController.selectedRoom.value!.roomName!.substring(0, 14)}..."
+                              : messengerController.selectedRoom.value!.roomName!,
                           style: semiBold18TextStyle(cBlackColor),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -110,7 +109,7 @@ class MessageScreen extends StatelessWidget {
                     child: TextButton(
                       style: kTextButtonStyle,
                       onPressed: () {
-                        messengerController.ringUser(messengerController.selectedReceiver.value!.id, CallType.video.name);
+                        messengerController.ringUser(messengerController.selectedRoom.value!.id, CallType.video.name);
                       },
                       child: Icon(
                         BipHip.video,
@@ -124,7 +123,7 @@ class MessageScreen extends StatelessWidget {
                     child: TextButton(
                       style: kTextButtonStyle,
                       onPressed: () {
-                        messengerController.ringUser(messengerController.selectedReceiver.value!.id, CallType.audio.name);
+                        messengerController.ringUser(messengerController.selectedRoom.value!.id, CallType.audio.name);
                       },
                       child: Icon(
                         BipHip.phoneFill,
@@ -179,9 +178,9 @@ class MessageScreen extends StatelessWidget {
                                                         style: regular14TextStyle(cSmallBodyTextColor))),
                                               )
                                             : CustomBubbleNormal(
-                                                userImage: (messengerController.selectedReceiver.value?.roomImage != null &&
-                                                        messengerController.selectedReceiver.value!.roomImage!.isNotEmpty)
-                                                    ? messengerController.selectedReceiver.value!.roomImage![0]
+                                                userImage: (messengerController.selectedRoom.value?.roomImage != null &&
+                                                        messengerController.selectedRoom.value!.roomImage!.isNotEmpty)
+                                                    ? messengerController.selectedRoom.value!.roomImage![0]
                                                     : null,
                                                 text: messages.text.toString(),
                                                 isSender: messages.senderId == Get.find<GlobalController>().userId.value ? true : false,

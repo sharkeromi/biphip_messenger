@@ -1,5 +1,6 @@
 import 'package:biphip_messenger/models/common/common_link_model.dart';
 import 'package:biphip_messenger/models/common/common_user_model.dart';
+import 'package:biphip_messenger/models/messenger/message_list_model.dart';
 
 class RoomListModel {
   Rooms? rooms;
@@ -116,7 +117,7 @@ class RoomData {
         lastMessageSenderId: json["last_message_sender_id"],
         updatedAt: json["updated_at"] == null ? null : DateTime.parse(json["updated_at"]),
         roomName: json["room_name"],
-        roomImage: List<String>.from(json["room_image"].map((x) => x)),
+        // roomImage: List<String>.from(json["room_image"].map((x) => x)),
         roomUserId: json["room_user_id"],
         participants: json["participants"] == null ? [] : List<Participant>.from(json["participants"]!.map((x) => Participant.fromJson(x))),
         isDelivered: json["is_delivered"],
@@ -249,68 +250,6 @@ class LastMessage {
       );
 }
 
-class MRoom {
-  int id;
-  dynamic name;
-  dynamic image;
-  int status;
-  int type;
-  dynamic creatorId;
-  dynamic kidId;
-  dynamic storeId;
-  int lastMessageId;
-  int lastMessageSenderId;
-  DateTime createdAt;
-  DateTime updatedAt;
-  String roomName;
-  List<String> roomImage;
-  int roomUserId;
-  int isDelivered;
-  int isSeen;
-  int isMute;
-
-  MRoom({
-    required this.id,
-    required this.name,
-    required this.image,
-    required this.status,
-    required this.type,
-    required this.creatorId,
-    required this.kidId,
-    required this.storeId,
-    required this.lastMessageId,
-    required this.lastMessageSenderId,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.roomName,
-    required this.roomImage,
-    required this.roomUserId,
-    required this.isDelivered,
-    required this.isSeen,
-    required this.isMute,
-  });
-
-  factory MRoom.fromJson(Map<String, dynamic> json) => MRoom(
-        id: json["id"],
-        name: json["name"],
-        image: json["image"],
-        status: json["status"],
-        type: json["type"],
-        creatorId: json["creator_id"],
-        kidId: json["kid_id"],
-        storeId: json["store_id"],
-        lastMessageId: json["last_message_id"],
-        lastMessageSenderId: json["last_message_sender_id"],
-        createdAt: DateTime.parse(json["created_at"]),
-        updatedAt: DateTime.parse(json["updated_at"]),
-        roomName: json["room_name"],
-        roomImage: List<String>.from(json["room_image"].map((x) => x)),
-        roomUserId: json["room_user_id"],
-        isDelivered: json["is_delivered"],
-        isSeen: json["is_seen"],
-        isMute: json["is_mute"],
-      );
-}
 
 class Reactions {
   int total;
