@@ -180,6 +180,7 @@ class MessengerController extends GetxController {
         "userName": roomList[i].roomName,
         "userImage": (roomList[i].roomImage != null && roomList[i].roomImage!.isNotEmpty) ? roomList[i].roomImage![0] : "default_image_url",
         "isSeen": true.obs,
+        "lastMessageTime": roomList[i].updatedAt,
         "messages": RxList([]),
       });
     }
@@ -207,6 +208,10 @@ class MessengerController extends GetxController {
     int index = allRoomMessageList.indexWhere((room) => room['roomID'] == roomID);
     if (index != -1) {
       allRoomMessageList[index]["messages"].insert(0, messageData);
+      var roomData = allRoomMessageList[index];
+      allRoomMessageList.remove(allRoomMessageList[index]);
+      allRoomMessageList.insert(0, roomData);
+      selectedRoomIndex.value = 0;
     }
   }
 
@@ -611,6 +616,9 @@ class MessengerController extends GetxController {
             0,
             //todo one to one set image
             MessageData(text: message.text, senderId: selectedRoom.value!.roomUserId, messageText: message.text, senderImage: ""));
+        var roomData = allRoomMessageList[index];
+        allRoomMessageList.remove(allRoomMessageList[index]);
+        allRoomMessageList.insert(0, roomData);
       }
     };
   }
@@ -1126,6 +1134,9 @@ class MessengerController extends GetxController {
             0,
             //todo set up image
             MessageData(text: message.text, senderId: userID, messageText: message.text, senderImage: ""));
+        var roomData = allRoomMessageList[index];
+        allRoomMessageList.remove(allRoomMessageList[index]);
+        allRoomMessageList.insert(0, roomData);
       }
     };
   }

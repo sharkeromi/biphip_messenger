@@ -74,14 +74,13 @@ class Inbox extends StatelessWidget {
                                         itemCount: messengerController.allRoomMessageList.length,
                                         itemBuilder: (context, index) {
                                           var item = messengerController.allRoomMessageList[index];
-                                          return Obx(() => InboxContainer(
+                                          return Obx(
+                                            () => InboxContainer(
                                               index: index,
                                               roomData: item['roomData'],
-                                              dataChannel: item['dataChannel'],
                                               peerConnectionList: item['peerConnectionList'],
-                                              roomID: messengerController.roomList[index].id!,
-                                              userID: messengerController.roomList[index].roomUserId ?? 0,
-                                              userName: messengerController.roomList[index].roomName!,
+                                              userID: item["userID"] ?? 0,
+                                              userName: item["userName"],
                                               userImage: (messengerController.roomList[index].roomImage != null &&
                                                       messengerController.roomList[index].roomImage!.isNotEmpty)
                                                   ? messengerController.roomList[index].roomImage![0]
@@ -91,7 +90,9 @@ class Inbox extends StatelessWidget {
                                               isMute: false,
                                               isLastMessageSelf: false,
                                               isSeen: item['isSeen'],
-                                              lastMessageTime: messengerController.roomList[index].updatedAt!));
+                                              lastMessageTime: item["lastMessageTime"],
+                                            ),
+                                          );
                                         })),
                                   ),
                                 if (messengerController.isInboxLoading.value)

@@ -48,12 +48,12 @@ class SocketController {
       } else if (data['type'] == EmitType.offer.name) {
         Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in messengerController.allRoomMessageList) room['roomID']: room};
         Map<String, dynamic>? room = allRoomMessageListMap[data["roomID"]];
-      List<dynamic> peerConnectionList = room!["peerConnectionList"];
+        List<dynamic> peerConnectionList = room!["peerConnectionList"];
 
-      Map<String, dynamic>? participant = peerConnectionList.firstWhere(
-        (participant) => participant["participantId"] == data["userID"],
-        orElse: () => {},
-      );
+        Map<String, dynamic>? participant = peerConnectionList.firstWhere(
+          (participant) => participant["participantId"] == data["userID"],
+          orElse: () => {},
+        );
 
         ll("GOT NEW OFFER: $data");
         if (allRoomMessageListMap.containsKey(data['roomID'])) {
@@ -92,6 +92,9 @@ class SocketController {
                 0,
                 MessageData(text: message.text, senderId: data['userID'], messageText: message.text, senderImage: data['userImage']),
               );
+              var roomData = messengerController.allRoomMessageList[index];
+              messengerController.allRoomMessageList.remove(messengerController.allRoomMessageList[index]);
+              messengerController.allRoomMessageList.insert(0, roomData);
             }
           };
         };
@@ -117,12 +120,12 @@ class SocketController {
         ll("GOT NEW ANSWER: $data");
         Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in messengerController.allRoomMessageList) room['roomID']: room};
         Map<String, dynamic>? room = allRoomMessageListMap[data["roomID"]];
-      List<dynamic> peerConnectionList = room!["peerConnectionList"];
+        List<dynamic> peerConnectionList = room!["peerConnectionList"];
 
-      Map<String, dynamic>? participant = peerConnectionList.firstWhere(
-        (participant) => participant["participantId"] == data["userID"],
-        orElse: () => {},
-      );
+        Map<String, dynamic>? participant = peerConnectionList.firstWhere(
+          (participant) => participant["participantId"] == data["userID"],
+          orElse: () => {},
+        );
         peerConnection = participant!['peerConnection'];
         ll("PC null: ${peerConnection == null}");
         var answer = RTCSessionDescription(
@@ -146,13 +149,13 @@ class SocketController {
       } else if (data['type'] == EmitType.candidate.name) {
         ll("GOT NEW CANDIDATE: $data");
         Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in messengerController.allRoomMessageList) room['roomID']: room};
-         Map<String, dynamic>? room = allRoomMessageListMap[data["roomID"]];
-      List<dynamic> peerConnectionList = room!["peerConnectionList"];
+        Map<String, dynamic>? room = allRoomMessageListMap[data["roomID"]];
+        List<dynamic> peerConnectionList = room!["peerConnectionList"];
 
-      Map<String, dynamic>? participant = peerConnectionList.firstWhere(
-        (participant) => participant["participantId"] == data["userID"],
-        orElse: () => {},
-      );
+        Map<String, dynamic>? participant = peerConnectionList.firstWhere(
+          (participant) => participant["participantId"] == data["userID"],
+          orElse: () => {},
+        );
         if (participant!['peerConnection'] != null) {
           ll("PC already created");
           peerConnection = participant['peerConnection'];
@@ -230,6 +233,9 @@ class SocketController {
                 //todo: set user image
                 MessageData(text: message.text, senderId: data['userID'], messageText: message.text, senderImage: data['userImage']),
               );
+              var roomData = messengerController.allRoomMessageList[index];
+              messengerController.allRoomMessageList.remove(messengerController.allRoomMessageList[index]);
+              messengerController.allRoomMessageList.insert(0, roomData);
             }
           };
         };

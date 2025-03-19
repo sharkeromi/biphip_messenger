@@ -2,7 +2,6 @@ import 'package:biphip_messenger/controllers/messenger/messenger_controller.dart
 import 'package:biphip_messenger/models/messenger/room_list_model.dart';
 import 'package:biphip_messenger/utils/constants/imports.dart';
 import 'package:biphip_messenger/utils/constants/routes.dart';
-import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:intl/intl.dart';
 
 class InboxContainer extends StatelessWidget {
@@ -17,9 +16,7 @@ class InboxContainer extends StatelessWidget {
     required this.isLastMessageSelf,
     required this.userID,
     required this.lastMessageTime,
-    required this.roomID,
     required this.index,
-    required this.dataChannel,
     this.peerConnectionList,
     required this.roomData,
   });
@@ -27,9 +24,8 @@ class InboxContainer extends StatelessWidget {
   final RxString message;
   final bool isMute, isLastMessageSelf;
   final RxBool isActive, isSeen;
-  final int userID, roomID, index;
+  final int userID, index;
   final DateTime lastMessageTime;
-  final RTCDataChannel? dataChannel;
   final List<dynamic>? peerConnectionList;
   final RoomData roomData;
   final MessengerController messengerController = Get.find<MessengerController>();
@@ -42,14 +38,14 @@ class InboxContainer extends StatelessWidget {
         messengerController.selectedRoomIndex.value = index;
         if (roomData.type == 1) {
           if (peerConnectionList![0]["dataChannel"] == null) {
-            messengerController.connectUser(userID, roomID);
+            messengerController.connectUser(userID, roomData.id);
           }
         } else {
-          messengerController.connectGroupUser(roomID);
+          messengerController.connectGroupUser(roomData.id);
         }
         Get.toNamed(krMessages);
         //* GET MESSAGE API CALL
-        await messengerController.getMessageList(roomID);
+        await messengerController.getMessageList(roomData.id);
         //*
       },
       child: Container(
