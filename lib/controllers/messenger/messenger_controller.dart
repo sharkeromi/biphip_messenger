@@ -610,7 +610,7 @@ class MessengerController extends GetxController {
       ll("ROOM NAME: $roomID DATA CHANNEL: ${dataChannel.label}");
       int index = allRoomMessageList.indexWhere((room) => room["roomID"] == roomID);
       if (index != -1) {
-        globalController.showSnackBar(title: allRoomMessageList[index]["userName"], message: message.text, color: Colors.green);
+        // globalController.showSnackBar(title: allRoomMessageList[index]["userName"], message: message.text, color: Colors.green);
         allRoomMessageList[index]["isSeen"] = false.obs;
         allRoomMessageList[index]["messages"].insert(
             0,
@@ -1175,7 +1175,7 @@ class MessengerController extends GetxController {
       ll("ROOM NAME: $roomID DATA CHANNEL: ${dataChannel.label}");
       int index = allRoomMessageList.indexWhere((room) => room['roomID'] == roomID);
       if (index != -1) {
-        globalController.showSnackBar(title: allRoomMessageList[index]["userName"], message: message.text, color: Colors.green);
+        // globalController.showSnackBar(title: allRoomMessageList[index]["userName"], message: message.text, color: Colors.green);
         allRoomMessageList[index]["isSeen"] = false.obs;
         allRoomMessageList[index]["messages"].insert(
             0,

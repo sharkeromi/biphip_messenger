@@ -86,7 +86,7 @@ class SocketController {
             int index = messengerController.allRoomMessageList.indexWhere((room) => room['roomID'] == data['roomID']);
             if (index != -1) {
               ll("here");
-              globalController.showSnackBar(title: messengerController.allRoomMessageList[index]["userName"], message: message.text, color: Colors.green);
+              // globalController.showSnackBar(title: messengerController.allRoomMessageList[index]["userName"], message: message.text, color: Colors.green);
               messengerController.allRoomMessageList[index]["isSeen"] = false.obs;
               messengerController.allRoomMessageList[index]["messages"].insert(
                 0,
@@ -226,7 +226,7 @@ class SocketController {
             ll("USER ID: ${data['userID']} DATA CHANNEL: ${channel.label}");
             int index = messengerController.allRoomMessageList.indexWhere((room) => room['roomID'] == data['roomID']);
             if (index != -1) {
-              globalController.showSnackBar(title: messengerController.allRoomMessageList[index]["userName"], message: message.text, color: Colors.green);
+              // globalController.showSnackBar(title: messengerController.allRoomMessageList[index]["userName"], message: message.text, color: Colors.green);
               messengerController.allRoomMessageList[index]["isSeen"] = false.obs;
               messengerController.allRoomMessageList[index]["messages"].insert(
                 0,
