@@ -202,11 +202,11 @@ class MRoom {
         createdAt: json["created_at"] == null ? null : DateTime.parse(json["created_at"]),
         updatedAt: json["updated_at"] == null ? null : DateTime.parse(json["updated_at"]),
         roomName: json["room_name"],
-        // roomImage: json["room_image"] == null
-        //     ? []
-        //     : List<String>.from(
-        //     json["room_image"].where((x) => x != null && x is String)
-        // ),
+        roomImage: json["room_image"] == null
+            ? []
+            : List<String>.from(
+            json["room_image"].where((x) => x != null && x is String)
+        ),
         roomUserId: json["room_user_id"],
 
     );

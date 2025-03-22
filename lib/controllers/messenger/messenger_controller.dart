@@ -29,7 +29,7 @@ class MessengerController extends GetxController {
   final RxBool isMessageTextFieldFocused = RxBool(false);
   final RxBool isSendEnabled = RxBool(false);
   final Rx<RoomData?> selectedRoom = Rx<RoomData?>(null);
-  final RxInt selectedRoomIndex = RxInt(-1);
+  final RxInt selectedRoomInde = RxInt(-1);
   final AudioService audioService = AudioService();
 
   @override
@@ -178,7 +178,7 @@ class MessengerController extends GetxController {
         "participants": roomList[i].participants,
         "status": false.obs,
         "userName": roomList[i].roomName,
-        "userImage": (roomList[i].roomImage != null && roomList[i].roomImage!.isNotEmpty) ? roomList[i].roomImage![0] : "default_image_url",
+        "userImage": (roomList[i].roomImage != null && roomList[i].roomImage!.isNotEmpty) ? roomList[i].roomImage! : ["default_image_url"],
         "isSeen": true.obs,
         "lastMessageTime": roomList[i].updatedAt,
         "messages": RxList([]),
@@ -211,7 +211,7 @@ class MessengerController extends GetxController {
       var roomData = allRoomMessageList[index];
       allRoomMessageList.remove(allRoomMessageList[index]);
       allRoomMessageList.insert(0, roomData);
-      selectedRoomIndex.value = 0;
+      // selectedRoomIndex.value = 0;
     }
   }
 

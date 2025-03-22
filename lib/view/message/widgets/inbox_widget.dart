@@ -20,13 +20,13 @@ class InboxContainer extends StatelessWidget {
     this.peerConnectionList,
     required this.roomData,
   });
-  final String userName, userImage;
+  final String userName;
   final RxString message;
   final bool isMute, isLastMessageSelf;
   final RxBool isActive, isSeen;
   final int userID, index;
   final DateTime lastMessageTime;
-  final List<dynamic>? peerConnectionList;
+  final List<dynamic>? peerConnectionList, userImage;
   final RoomData roomData;
   final MessengerController messengerController = Get.find<MessengerController>();
 
@@ -35,7 +35,7 @@ class InboxContainer extends StatelessWidget {
     return InkWell(
       onTap: () async {
         messengerController.selectedRoom.value = roomData;
-        messengerController.selectedRoomIndex.value = index;
+        // messengerController.selectedRoomIndex.value = index;
         if (roomData.type == 1) {
           if (peerConnectionList![0]["dataChannel"] == null) {
             messengerController.connectUser(userID, roomData.id);
@@ -65,7 +65,7 @@ class InboxContainer extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                     child: Image.network(
-                      userImage,
+                      userImage![0],
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => const Icon(
                         BipHip.user,
@@ -154,7 +154,7 @@ class InboxContainer extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child: Image.network(
-                    userImage,
+                    userImage![0],
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => const Icon(
                       BipHip.user,

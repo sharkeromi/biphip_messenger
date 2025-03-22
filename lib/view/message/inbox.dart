@@ -81,10 +81,7 @@ class Inbox extends StatelessWidget {
                                               peerConnectionList: item['peerConnectionList'],
                                               userID: item["userID"] ?? 0,
                                               userName: item["userName"],
-                                              userImage: (messengerController.roomList[index].roomImage != null &&
-                                                      messengerController.roomList[index].roomImage!.isNotEmpty)
-                                                  ? messengerController.roomList[index].roomImage![0]
-                                                  : "default_image_url",
+                                              userImage: item["userImage"],
                                               message: item["messages"].isEmpty ? RxString("Test message") : RxString(item["messages"][0].messageText),
                                               isActive: item["status"],
                                               isMute: false,

@@ -163,10 +163,10 @@ class MessageScreen extends StatelessWidget {
                                       physics: const NeverScrollableScrollPhysics(),
                                       reverse: true,
                                       shrinkWrap: true,
-                                      itemCount: messengerController.allRoomMessageList[messengerController.selectedRoomIndex.value]["messages"].length,
+                                      itemCount: messengerController.allRoomMessageList[messengerController.allRoomMessageList.indexWhere((room) => room['roomID'] == messengerController.selectedRoom.value!.id)]["messages"].length,
                                       itemBuilder: (context, index) {
                                         MessageData messages =
-                                            messengerController.allRoomMessageList[messengerController.selectedRoomIndex.value]["messages"][index];
+                                            messengerController.allRoomMessageList[messengerController.allRoomMessageList.indexWhere((room) => room['roomID'] == messengerController.selectedRoom.value!.id)]["messages"][index];
                                         return messages.senderId == null
                                             ? Padding(
                                                 padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: h20),
