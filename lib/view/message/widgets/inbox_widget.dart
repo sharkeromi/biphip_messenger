@@ -56,25 +56,78 @@ class InboxContainer extends StatelessWidget {
           children: [
             Stack(
               children: [
-                ClipOval(
-                  child: Container(
-                    height: h50,
-                    width: h50,
-                    decoration: const BoxDecoration(
-                      color: cBlackColor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Image.network(
-                      userImage![0],
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        BipHip.user,
-                        size: kIconSize24,
-                        color: cIconColor,
+                SizedBox(
+                  height: h50,
+                  width: h50,
+                ),
+                if (userImage!.length == 1)
+                  ClipOval(
+                    child: Container(
+                      height: h50,
+                      width: h50,
+                      decoration: const BoxDecoration(
+                        color: cBlackColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Image.network(
+                        userImage![0],
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => const Icon(
+                          BipHip.user,
+                          size: kIconSize24,
+                          color: cIconColor,
+                        ),
                       ),
                     ),
                   ),
-                ),
+                if (userImage!.length > 1)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    child: ClipOval(
+                      child: Container(
+                        height: 33,
+                        width: 33,
+                        decoration: const BoxDecoration(
+                          color: cBlackColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Image.network(
+                          userImage![0],
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => const Icon(
+                            BipHip.user,
+                            size: kIconSize12,
+                            color: cIconColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                if (userImage!.length > 1)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: ClipOval(
+                      child: Container(
+                        height: 33,
+                        width: 33,
+                        decoration: const BoxDecoration(
+                          color: cBlackColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Image.network(
+                          userImage![1],
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => const Icon(
+                            BipHip.user,
+                            size: kIconSize12,
+                            color: cIconColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 if (isActive.value)
                   Positioned(
                     bottom: 3,
