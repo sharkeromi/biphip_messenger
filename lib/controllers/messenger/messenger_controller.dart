@@ -666,7 +666,7 @@ class MessengerController extends GetxController {
     callerID.value = selectedRoom.value!.roomUserId!;
     Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in allRoomMessageList) room['roomID']: room};
     callerName.value = allRoomMessageListMap[roomId]!['userName'];
-    callerImage.value = allRoomMessageListMap[roomId]!['userImage'];
+    callerImage.value = allRoomMessageListMap[roomId]!['userImage'][0];
 
     callState.value = CallStatus.ringing.name;
     if (callType == CallType.audio.name) {
@@ -744,7 +744,7 @@ class MessengerController extends GetxController {
     isUserTypeSender.value = false;
     Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in allRoomMessageList) room['roomID']: room};
     callerName.value = allRoomMessageListMap[data['roomID']]!['userName'];
-    callerImage.value = allRoomMessageListMap[data['roomID']]!['userImage'];
+    callerImage.value = allRoomMessageListMap[data['roomID']]!['userImage'][0];
     roomID.value = data['roomID'];
     callerID.value = data['userID'];
     callOffer.value = data['data'];
@@ -1162,7 +1162,6 @@ class MessengerController extends GetxController {
         };
       }
     }
-    ll(allRoomMessageListMap);
   }
 
   void setupGroupDataChannelListeners(RTCDataChannel dataChannel, roomID, userID) {

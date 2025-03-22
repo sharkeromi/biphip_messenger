@@ -91,7 +91,7 @@ class MessengerHelper {
       var videoTrack = messengerController.localStream!.getVideoTracks().first;
       webRTC.Helper.switchCamera(videoTrack);
     } else {
-      print("No local video stream or video tracks available.");
+      ll("No local video stream or video tracks available.");
     }
   }
 
