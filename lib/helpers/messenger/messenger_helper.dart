@@ -35,7 +35,7 @@ class MessengerHelper {
     messengerController.localStream = stream;
   }
 
-  Future<void> hangUp() async {
+  Future<void> hangUp(roomID) async {
     await AudioService().stopAudio();
     // Stop localRenderer tracks
     if (messengerController.localRenderer.srcObject != null) {
@@ -56,26 +56,31 @@ class MessengerHelper {
       messengerController.localStream = null;
     }
 
-    if (messengerController.remoteRenderer.srcObject != null) {
-      List<webRTC.MediaStreamTrack> remoteTracks = messengerController.remoteRenderer.srcObject!.getTracks();
-      for (var track in remoteTracks) {
-        log("remote track stopped");
-        track.stop();
+    Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in messengerController.allRoomMessageList) room['roomID']: room};
+    Map<String, dynamic>? room = allRoomMessageListMap[roomID];
+    List<dynamic> peerConnectionList = room!["peerConnectionList"];
+    for (var peerConnection in peerConnectionList) {
+      if (peerConnection["remoteRenderer"].srcObject != null) {
+        List<webRTC.MediaStreamTrack> remoteTracks = peerConnection["remoteRenderer"].srcObject!.getTracks();
+        for (var track in remoteTracks) {
+          log("remote track stopped");
+          track.stop();
+        }
+      }
+
+      // Stop remoteStream tracks
+      if (peerConnection["remoteStream"] != null) {
+        peerConnection["remoteStream"].getTracks().forEach((track) async {
+          log("Remote stopped");
+          await track.stop();
+        });
+        await peerConnection["remoteStream"].dispose();
+        peerConnection["remoteStream"] = null;
       }
     }
 
-    // Stop remoteStream tracks
-    if (messengerController.remoteStream != null) {
-      messengerController.remoteStream!.getTracks().forEach((track) async {
-        log("Remote stopped");
-        await track.stop();
-      });
-      await messengerController.remoteStream!.dispose();
-      messengerController.remoteStream = null;
-    }
-
     stopForegroundService();
-    messengerController.disposeRenderer();
+    messengerController.disposeRenderer(roomID);
     messengerController.isInCallState.value = false;
     messengerController.isRemoteFeedStreaming.value = false;
     messengerController.isLocalFeedStreaming.value = false;

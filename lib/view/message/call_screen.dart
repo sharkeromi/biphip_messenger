@@ -157,7 +157,7 @@ class CallScreen extends StatelessWidget {
                                   'roomID': messengerController.roomID.value,
                                   'callStatus': CallStatus.hangUp.name,
                                 });
-                                await MessengerHelper().hangUp();
+                                await MessengerHelper().hangUp(messengerController.roomID.value);
                               },
                               child: Container(
                                 decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),

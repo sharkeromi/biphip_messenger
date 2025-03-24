@@ -177,7 +177,7 @@ class SocketController {
       } else if (data['callStatus'] == CallStatus.decline.name) {
         messengerController.onDeclineCall();
       } else if (data['callStatus'] == CallStatus.hangUp.name) {
-        await messengerController.onHangUpCall();
+        await messengerController.onHangUpCall(data['roomID']);
       } else if (data['callStatus'] == CallStatus.inCAll.name) {
         if (data["type"] == EmitType.answer.name) {
           messengerController.onCallStart(data);
