@@ -5,13 +5,15 @@ import 'package:biphip_messenger/helpers/messenger/messenger_helper.dart';
 import 'package:biphip_messenger/utils/constants/imports.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
-class CallScreen extends StatelessWidget {
-  CallScreen({super.key});
-
+class GroupCallScreen extends StatelessWidget {
+  GroupCallScreen({super.key});
   final MessengerController messengerController = Get.find<MessengerController>();
 
   @override
   Widget build(BuildContext context) {
+    Map<String?, Map<String, dynamic>> asd = {for (var room in messengerController.allRoomMessageList) room['roomID'].toString(): room};
+
+    ll(asd);
     return Container(
       color: cWhiteColor,
       child: SafeArea(
@@ -20,66 +22,101 @@ class CallScreen extends StatelessWidget {
           () => SizedBox(
             height: height,
             child: Scaffold(
-              backgroundColor: cWhiteColor,
               body: Stack(
                 children: [
-                  if (messengerController.callState.value == CallStatus.ringing.name)
-                    RTCVideoView(
-                      messengerController.localRenderer,
-                      mirror: true,
-                      objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                    ),
-                  if (messengerController.callState.value == CallStatus.inCAll.name)
-                    messengerController.isRemoteFeedStreaming.value
-                        ? RTCVideoView(
-                            messengerController.remoteRenderer,
-                            objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                          )
-                        : SizedBox(
-                            height: height,
-                            width: width,
-                          ),
-                  if (messengerController.callState.value == CallStatus.ringing.name ||
-                      (messengerController.callState.value == CallStatus.inCAll.name && !messengerController.isRemoteFeedStreaming.value))
-                    Positioned(
-                      top: 100,
-                      child: SizedBox(
-                        width: width,
-                        child: Column(
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      Map<int?, Map<String, dynamic>> allRoomMessageListMap = {for (var room in messengerController.allRoomMessageList) room['roomID']: room};
+                      // Find the room
+                      Map<String, dynamic>? room = allRoomMessageListMap[messengerController.roomID.value];
+                      List<dynamic> peerConnectionList = room!["peerConnectionList"];
+                      List<dynamic> inCallParticipants = [];
+                      for (var participant in peerConnectionList) {
+                        if (participant['remoteStream'] != null) {
+                          inCallParticipants.add(participant);
+                        }
+                      }
+                      ll(inCallParticipants.length);
+                      if (inCallParticipants.length == 1) {
+                        return Column(
                           children: [
-                            const SizedBox(
-                              height: 200,
-                            ),
-                            Container(
-                              height: isDeviceScreenLarge() ? 150 : (150 - h10),
-                              width: isDeviceScreenLarge() ? 150 : (150 - h10),
-                              decoration: BoxDecoration(
-                                color: cBlackColor,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: cWhiteColor.withAlpha(500), width: 2),
+                            Expanded(
+                              child: RTCVideoView(
+                                inCallParticipants[0]["remoteRenderer"],
+                                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                               ),
-                              child: ClipOval(
-                                child: Image.network(
-                                  messengerController.callerImage.value.toString(),
-                                  fit: BoxFit.cover,
-                                  filterQuality: FilterQuality.high,
-                                  errorBuilder: (context, error, stackTrace) => imageErrorBuilderCover(
-                                    context,
-                                    error,
-                                    stackTrace,
-                                    Icons.person_2_rounded,
-                                    70.0,
+                            ),
+                            Expanded(
+                              child: RTCVideoView(
+                                messengerController.localRenderer,
+                                mirror: true,
+                                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                              ),
+                            ),
+                          ],
+                        );
+                      } else if (inCallParticipants.length == 2) {
+                        return SizedBox(
+                          height: height,
+                          width: width,
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  SizedBox(
+                                    height: height / 2,
+                                    width: width / 2,
+                                    child: RTCVideoView(
+                                      inCallParticipants[0]["remoteRenderer"],
+                                      objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                                    ),
                                   ),
-                                  loadingBuilder: imageLoadingBuilder,
+                                  SizedBox(
+                                    height: height / 2,
+                                    width: width / 2,
+                                    child: RTCVideoView(
+                                      inCallParticipants[1]["remoteRenderer"],
+                                      objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(
+                                height: height / 2,
+                                width: width,
+                                child: RTCVideoView(
+                                  messengerController.localRenderer,
+                                  mirror: true,
+                                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                                 ),
                               ),
+                            ],
+                          ),
+                        );
+                      } else {
+                        return GridView.builder(
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 1,
                             ),
-                            kH20sizedBox,
-                            Text(messengerController.callerName.value),
-                          ],
-                        ),
-                      ),
-                    ),
+                            itemCount: inCallParticipants.length + 1,
+                            itemBuilder: (context, index) {
+                              if (index == inCallParticipants.length) {
+                                return RTCVideoView(
+                                  messengerController.localRenderer,
+                                  mirror: true,
+                                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                                );
+                              } else {
+                                return RTCVideoView(
+                                  inCallParticipants[index]["remoteRenderer"],
+                                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                                );
+                              }
+                            });
+                      }
+                    },
+                  ),
                   Positioned(
                     bottom: 70,
                     // left: (width / 2) - 35,
@@ -172,28 +209,6 @@ class CallScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (messengerController.callState.value == CallStatus.inCAll.name && !messengerController.isAudioCallState.value)
-                    Positioned(
-                      top: 50,
-                      right: 20,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        height: 200,
-                        width: 130,
-                        child: messengerController.isLocalFeedStreaming.value
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: RTCVideoView(
-                                  messengerController.localRenderer,
-                                  mirror: true,
-                                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                                ),
-                              )
-                            : const SizedBox(),
-                      ),
-                    ),
                 ],
               ),
             ),

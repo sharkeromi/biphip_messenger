@@ -92,7 +92,7 @@ class RingingScreen extends StatelessWidget {
                               ),
                               InkWell(
                                 onTap: () {
-                                  messengerController.onAcceptCall(messengerController.roomID.value);
+                                  messengerController.onAcceptCall(messengerController.roomID.value, messengerController.roomType);
                                 },
                                 child: Container(
                                   decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),

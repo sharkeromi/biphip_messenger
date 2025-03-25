@@ -171,7 +171,9 @@ class SocketController {
     });
 
     socket.on('mobile-call-${Get.find<GlobalController>().userId.value}', (data) async {
+      if(data['callStatus']!=null){
       messengerController.callState.value = data['callStatus'];
+      }
       if (data['callStatus'] == CallStatus.ringing.name) {
         messengerController.onCallRing(data);
       } else if (data['callStatus'] == CallStatus.decline.name) {
@@ -192,6 +194,8 @@ class SocketController {
             }
           }
         }
+      }else if(data['type']== EmitType.offer.name){
+        messengerController.saveOffers(data);
       }
     });
 

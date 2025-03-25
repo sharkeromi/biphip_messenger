@@ -5,6 +5,7 @@ import 'package:biphip_messenger/view/intro/splash_screen.dart';
 import 'package:biphip_messenger/view/message/add_member_screen.dart';
 import 'package:biphip_messenger/view/message/call_screen.dart';
 import 'package:biphip_messenger/view/message/create_group_screen.dart';
+import 'package:biphip_messenger/view/message/group_call_screen.dart';
 import 'package:biphip_messenger/view/message/inbox.dart';
 import 'package:biphip_messenger/view/message/message_screen.dart';
 import 'package:biphip_messenger/view/message/ringing_screen.dart';
@@ -154,6 +155,7 @@ const String krMarketPlaceBuyingPage = "/marketplace-buying-page";
 //*chat
 const String krMessages = "/messages";
 const String krCallScreen = '/call-screen';
+const String krGroupCallScreen = '/group-call-screen';
 const String krRingingScreen = '/ringing-screen';
 
 //*Notification
@@ -237,6 +239,7 @@ List<GetPage<dynamic>>? routes = [
   GetPage(name: krMessages, page: () => MessageScreen(), transition: Transition.noTransition),
   GetPage(name: krRingingScreen, page: () => RingingScreen(), transition: Transition.noTransition),
   GetPage(name: krCallScreen, page: () => CallScreen(), transition: Transition.noTransition),
+  GetPage(name: krGroupCallScreen, page: () => GroupCallScreen(), transition: Transition.noTransition),
   GetPage(name: krCreateGroup, page: () => CreateGroupScreen(), transition: Transition.rightToLeft),
   GetPage(name: krRoomDetails, page: () => RoomDetailsScreen(), transition: Transition.rightToLeft),
   GetPage(name: krAddMember, page: () => AddMemberScreen(), transition: Transition.rightToLeft),
