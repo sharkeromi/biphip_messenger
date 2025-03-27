@@ -47,6 +47,7 @@ class MessengerController extends GetxController {
   }
 
   Future<void> initializeRenderer(roomID) async {
+    inCallParticipants.clear();
     if (localRenderer.textureId == null) {
       localRenderer = RTCVideoRenderer();
       await localRenderer.initialize();
@@ -57,6 +58,8 @@ class MessengerController extends GetxController {
       var remoteRenderer = RTCVideoRenderer();
       await remoteRenderer.initialize();
       participant["remoteRenderer"] = remoteRenderer;
+      // inCallParticipants
+      //     .add({'userID': participant['participantId'], 'remoteStream': participant['remoteStream'], 'remoteRenderer': participant["remoteRenderer"]});
       allRoomMessageList.clear();
       allRoomMessageList.addAll(allRoomMessageListMap.values.toList());
     }
@@ -676,6 +679,7 @@ class MessengerController extends GetxController {
   final RxBool isInCallState = RxBool(false);
 
   final RxList<Map<String, dynamic>> callOfferList = RxList([]);
+  final RxList<Map<String, dynamic>> inCallParticipants = RxList([]);
 
   //Ring function for Sender
   Future<void> ringUser(roomId, String callType, roomType) async {
@@ -761,6 +765,7 @@ class MessengerController extends GetxController {
   }
 
   void saveOffers(data) {
+    ll("SAVED OFFER: ${data['userID']}");
     callOfferList.add({"userID": data['userID'], 'sdp': data['data']['sdp'], 'type': data['data']['type']});
   }
 
@@ -792,8 +797,21 @@ class MessengerController extends GetxController {
   }
 
   //Hangup from both sides
-  Future<void> onHangUpCall(roomID) async {
+  Future<void> onHangUpCall(data) async {
     await audioService.stopAudio();
+    await MessengerHelper().onHangUp(data);
+  }
+
+  Future<void> hangUp(roomID) async {
+    inCallParticipants.clear();
+    Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in allRoomMessageList) room['roomID']: room};
+    for (var participant in allRoomMessageListMap[roomID]!["peerConnectionList"]) {
+      socket.emit('mobile-call-${participant['participantId']}', {
+        'userID': Get.find<GlobalController>().userId.value,
+        'roomID': roomID,
+        'callStatus': CallStatus.hangUp.name,
+      });
+    }
     await MessengerHelper().hangUp(roomID);
   }
 
@@ -816,11 +834,13 @@ class MessengerController extends GetxController {
       } else {
         peerConnection = participant!['peerConnection'];
       }
-      if (participant!['participantId'] == callerID.value) {
-        localStream?.getTracks().forEach((track) async {
-          ll("ON ANSWER VIDEO CALL GETTING LOCAL TRACK: $track");
-          await peerConnection!.addTrack(track, localStream!);
-        });
+      localStream?.getTracks().forEach((track) async {
+        ll("ON ANSWER VIDEO CALL GETTING LOCAL TRACK: $track");
+        await peerConnection!.addTrack(track, localStream!);
+      });
+
+      Map<int, Map<String, dynamic>> offerListMap = {for (var callOffer in callOfferList) callOffer['userID']: callOffer};
+      if (participant!['participantId'] == callerID.value || offerListMap.containsKey(participant['participantId'])) {
         ll('Setting remote description for video call');
         Map<int, Map<String, dynamic>> offerListMap = {for (var callOffer in callOfferList) callOffer['userID']: callOffer};
         if (offerListMap.containsKey(participant['participantId'])) {
@@ -854,6 +874,19 @@ class MessengerController extends GetxController {
             'type': offer.type,
           },
         });
+        peerConnection.onIceCandidate = (RTCIceCandidate candidate) {
+          ll("GENERATED ICE CANDIDATE");
+          socket.emit('group-chat-${participant['participantId']}', {
+            'userID': Get.find<GlobalController>().userId.value,
+            'roomID': roomID,
+            'type': "candidate",
+            'data': {
+              'candidate': candidate.candidate,
+              'sdpMid': candidate.sdpMid,
+              'sdpMLineIndex': candidate.sdpMLineIndex,
+            }
+          });
+        };
       }
       participant['peerConnection'] = peerConnection;
       allRoomMessageList.clear();
@@ -1279,6 +1312,21 @@ class MessengerController extends GetxController {
                 'type': answer.type,
               }
             });
+            if (userID != callerID.value) {
+              peerConnection.onIceCandidate = (RTCIceCandidate candidate) {
+                ll("GENERATED ICE CANDIDATE");
+                socket.emit('group-chat-$userID', {
+                  'userID': Get.find<GlobalController>().userId.value,
+                  'roomID': roomID,
+                  'type': "candidate",
+                  'data': {
+                    'candidate': candidate.candidate,
+                    'sdpMid': candidate.sdpMid,
+                    'sdpMLineIndex': candidate.sdpMLineIndex,
+                  }
+                });
+              };
+            }
           } else {
             socket.emit('group-chat-$userID', {
               'userID': Get.find<GlobalController>().userId.value,
@@ -1321,7 +1369,7 @@ class MessengerController extends GetxController {
       Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in allRoomMessageList) room['roomID']: room};
       ll('Got remote track sc: ${event.streams[0]}');
 
-      ll('Initializing remoteStream');
+      ll('Initializing remoteStream for $userID');
       for (var participant in allRoomMessageListMap[roomID]!["peerConnectionList"]) {
         if (participant['participantId'] == userID) {
           remoteGroupStream = await createLocalMediaStream('remoteStream');
@@ -1334,6 +1382,19 @@ class MessengerController extends GetxController {
             }
           });
           participant['remoteStream'] = remoteGroupStream;
+          int index = inCallParticipants.indexWhere((p) => p['userID'] == participant['participantId']);
+
+          if (index != -1) {
+            inCallParticipants[index]['remoteStream'] = participant['remoteStream'];
+            inCallParticipants[index]['remoteRenderer'] = participant['remoteRenderer'];
+          } else {
+            inCallParticipants.add({
+              'userID': participant['participantId'],
+              'userName': participant['participantName'],
+              'remoteStream': participant['remoteStream'],
+              'remoteRenderer': participant['remoteRenderer'],
+            });
+          }
           allRoomMessageList.clear();
           allRoomMessageList.addAll(allRoomMessageListMap.values.toList());
           break;
@@ -1358,6 +1419,7 @@ class MessengerController extends GetxController {
           }
           allRoomMessageList.clear();
           allRoomMessageList.addAll(allRoomMessageListMap.values.toList());
+          break;
         }
       }
     };

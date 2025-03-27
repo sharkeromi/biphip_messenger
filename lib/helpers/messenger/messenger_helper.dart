@@ -87,6 +87,34 @@ class MessengerHelper {
     Get.back();
   }
 
+  Future<void> onHangUp(data) async {
+    Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in messengerController.allRoomMessageList) room['roomID']: room};
+    Map<String, dynamic>? room = allRoomMessageListMap[data['roomID']];
+    List<dynamic> peerConnectionList = room!["peerConnectionList"];
+    for (var peerConnection in peerConnectionList) {
+      if (peerConnection["participantId"] == data['userID']) {
+        messengerController.inCallParticipants.removeWhere((map) => map['userID'] == data['userID']);
+        if (peerConnection["remoteRenderer"] != null) {
+          List<webRTC.MediaStreamTrack> remoteTracks = peerConnection["remoteRenderer"].srcObject!.getTracks();
+          for (var track in remoteTracks) {
+            log("remote track stopped");
+            track.stop();
+          }
+        }
+
+        // Stop remoteStream tracks
+        if (peerConnection["remoteStream"] != null) {
+          peerConnection["remoteStream"].getTracks().forEach((track) async {
+            log("Remote stopped");
+            await track.stop();
+          });
+          await peerConnection["remoteStream"].dispose();
+          peerConnection["remoteStream"] = null;
+        }
+      }
+    }
+  }
+
   void stopForegroundService() async {
     await webRTC.Helper.setSpeakerphoneOn(false);
   }
