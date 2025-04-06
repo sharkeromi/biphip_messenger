@@ -48,7 +48,9 @@ class MessengerController extends GetxController {
 
   Future<void> initializeRenderer(roomID) async {
     inCallParticipants.clear();
+    ll("HERE");
     if (localRenderer.textureId == null) {
+      ll("HERE Initializing localRenderer");
       localRenderer = RTCVideoRenderer();
       await localRenderer.initialize();
     }
@@ -175,6 +177,7 @@ class MessengerController extends GetxController {
           peerConnectionList.add({
             "participantId": participants.userId,
             "participantName": participants.userNickname,
+            "participantImage": participants.userImage,
             "peerConnection": null,
             "dataChannel": null,
             "dataChannelLabel": "",
@@ -856,7 +859,7 @@ class MessengerController extends GetxController {
         }
       } else {
         RTCSessionDescription? offer;
-        if (callType == CallType.audio.name) {
+        if (isAudioCallState.value) {
           offer = await peerConnection!.createOffer({
             'offerToReceiveAudio': true,
             'offerToReceiveVideo': false,
@@ -1384,15 +1387,20 @@ class MessengerController extends GetxController {
           participant['remoteStream'] = remoteGroupStream;
           int index = inCallParticipants.indexWhere((p) => p['userID'] == participant['participantId']);
 
+          final hasVideo = event.streams[0].getVideoTracks().isNotEmpty;
           if (index != -1) {
             inCallParticipants[index]['remoteStream'] = participant['remoteStream'];
             inCallParticipants[index]['remoteRenderer'] = participant['remoteRenderer'];
+            inCallParticipants[index]['isVideoStreaming'] = hasVideo;
           } else {
+            ll("Track kind 1: ${event.track.kind}");
             inCallParticipants.add({
               'userID': participant['participantId'],
               'userName': participant['participantName'],
+              'userImage': participant['participantImage'],
               'remoteStream': participant['remoteStream'],
               'remoteRenderer': participant['remoteRenderer'],
+              'isVideoStreaming': hasVideo,
             });
           }
           allRoomMessageList.clear();

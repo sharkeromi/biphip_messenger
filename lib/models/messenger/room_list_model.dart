@@ -136,6 +136,7 @@ class Participant {
   int? isDeleted;
   int? isArchived;
   dynamic archivedAt;
+  String? userImage;
 
   Participant({
     this.id,
@@ -146,6 +147,7 @@ class Participant {
     this.isDeleted,
     this.isArchived,
     this.archivedAt,
+    this.userImage,
   });
 
   factory Participant.fromJson(Map<String, dynamic> json) => Participant(
@@ -157,6 +159,7 @@ class Participant {
         isDeleted: json["is_deleted"],
         isArchived: json["is_archived"],
         archivedAt: json["archived_at"],
+        userImage: json['prifile_picture']
       );
 }
 
