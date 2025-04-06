@@ -73,16 +73,18 @@ class MessengerController extends GetxController {
     Map<String, dynamic>? room = allRoomMessageListMap[roomID];
     List<dynamic> peerConnectionList = room!["peerConnectionList"];
     for (var participants in peerConnectionList) {
-      participants["remoteRenderer"].dispose();
-      participants["remoteRenderer"] = null;
+      if (participants["remoteRenderer"] != null) {
+        participants["remoteRenderer"].srcObject = null;
+        participants["remoteRenderer"].dispose();
+      }
     }
   }
 
-  @override
-  void onClose() {
-    super.onClose();
-    // disposeRenderer();
-  }
+  // @override
+  // void onClose() {
+  //   super.onClose();
+  //   // disposeRenderer();
+  // }
 
   //=====================================================
   //!          Check for internet connection
@@ -938,116 +940,123 @@ class MessengerController extends GetxController {
   Future<void> switchToAudioCall(roomID) async {
     RTCPeerConnection? peerConnection;
     Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in allRoomMessageList) room['roomID']: room};
-    Map<String, dynamic>? room = allRoomMessageListMap[roomID];
-    List<dynamic> peerConnectionList = room!["peerConnectionList"];
+    for (var participant in allRoomMessageListMap[roomID]!["peerConnectionList"]) {
+      peerConnection = participant!['peerConnection'];
+      if (localStream == null) {
+        ll("Local stream is not initialized.");
+        return;
+      }
 
-    Map<String, dynamic>? participant = peerConnectionList.firstWhere(
-      (participant) => participant["participantId"] == callerID.value,
-      orElse: () => {},
-    );
-    peerConnection = participant!['peerConnection'];
-    if (localStream == null) {
-      ll("Local stream is not initialized.");
-      return;
+      List<MediaStreamTrack> videoTracks = List.from(localStream!.getVideoTracks());
+      List<RTCRtpSender> senders = List.from(await peerConnection!.getSenders());
+
+      for (var track in videoTracks) {
+        localStream!.removeTrack(track);
+        RTCRtpSender? sender = senders.firstWhere(
+          (s) => s.track?.id == track.id,
+        );
+        await peerConnection.removeTrack(sender);
+        track.enabled = false;
+        track.stop();
+      }
+
+      socket.emit('mobile-call-${participant['participantId']}', {
+        'userID': globalController.userId.value,
+        'roomID': roomID,
+        'callStatus': CallStatus.inCAll.name,
+        'type': "callSettings",
+        'data': "switchToAudio",
+      });
     }
-    List<MediaStreamTrack> videoTracks = List.from(localStream!.getVideoTracks());
-    List<RTCRtpSender> senders = List.from(await peerConnection!.getSenders());
-
-    for (var track in videoTracks) {
-      localStream!.removeTrack(track);
-      RTCRtpSender? sender = senders.firstWhere(
-        (s) => s.track?.id == track.id,
-      );
-      await peerConnection.removeTrack(sender);
-      track.enabled = false;
-      track.stop();
-    }
-
-    socket.emit('mobile-call-${allRoomMessageListMap[roomID]!['userID']}', {
-      'userID': globalController.userId.value,
-      'roomID': roomID,
-      'callStatus': CallStatus.inCAll.name,
-      'type': "callSettings",
-      'data': "switchToAudio",
-    });
+    await MessengerHelper().initAudioCallSwitcher();
     isAudioCallState.value = true;
     isLocalFeedStreaming.value = false;
-    if (!isRemoteFeedStreaming.value) {
+    bool allVideoStreamOff = inCallParticipants.every((item) => item["isVideoStreaming"] == false);
+
+    if (allVideoStreamOff) {
       Helper.setSpeakerphoneOn(false);
     }
   }
 
-  Future<void> onSwitchToAudioCall(roomID) async {
+  Future<void> onSwitchToAudioCall(data) async {
     RTCPeerConnection? peerConnection;
     Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in allRoomMessageList) room['roomID']: room};
-    Map<String, dynamic>? room = allRoomMessageListMap[roomID];
-    List<dynamic> peerConnectionList = room!["peerConnectionList"];
-
-    Map<String, dynamic>? participant = peerConnectionList.firstWhere(
-      (participant) => participant["participantId"] == callerID.value,
-      orElse: () => {},
-    );
-    peerConnection = participant!['peerConnection'];
-    if (remoteStream == null) {
-      ll("Remote stream is not initialized.");
-      return;
-    }
-    await MessengerHelper().initAudioCallSwitcher();
-    List<MediaStreamTrack> videoTracks = remoteStream!.getVideoTracks();
-    List<RTCRtpSender> senders = List.from(await peerConnection!.getSenders());
-
-    for (var track in videoTracks) {
-      for (var sender in senders) {
-        if (sender.track?.id == track.id) {
-          await peerConnection.removeTrack(sender);
-          break;
+    for (var participant in allRoomMessageListMap[data['roomID']]!["peerConnectionList"]) {
+      if (participant!['participantId'] == data['userID']) {
+        peerConnection = participant!['peerConnection'];
+        if (participant!['remoteStream'] == null) {
+          ll("Remote stream is not initialized.");
+          return;
         }
+        //  await MessengerHelper().initAudioCallSwitcher();
+        List<MediaStreamTrack> videoTracks = participant!['remoteStream'].getVideoTracks();
+        List<RTCRtpSender> senders = List.from(await peerConnection!.getSenders());
+
+        for (var track in videoTracks) {
+          for (var sender in senders) {
+            if (sender.track?.id == track.id) {
+              await peerConnection.removeTrack(sender);
+              break;
+            }
+          }
+          track.enabled = false;
+          track.stop();
+        }
+        participant['remoteRenderer'].dispose();
+        participant["remoteRenderer"] = null;
+        int index = inCallParticipants.indexWhere((p) => p['userID'] == participant['participantId']);
+
+        if (index != -1) {
+          inCallParticipants[index]['remoteStream'] = participant['remoteStream'];
+          inCallParticipants[index]['remoteRenderer'] = null;
+          inCallParticipants[index]['isVideoStreaming'] = false;
+        }
+        RxList<Map<String, dynamic>> temporaryInCallParticipants = RxList([]);
+        temporaryInCallParticipants.addAll(inCallParticipants);
+        inCallParticipants.clear();
+        inCallParticipants.addAll(temporaryInCallParticipants);
       }
-      track.enabled = false;
-      track.stop();
+      isRemoteFeedStreaming.value = false;
     }
-    isRemoteFeedStreaming.value = false;
-    if (!isLocalFeedStreaming.value) {
+
+    bool allVideoStreamOff = inCallParticipants.every((item) => item["isVideoStreaming"] == false);
+
+    if (allVideoStreamOff) {
       Helper.setSpeakerphoneOn(false);
     }
   }
 
   Future<void> switchToVideoCall(roomID) async {
     RTCPeerConnection? peerConnection;
-    Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in allRoomMessageList) room['roomID']: room};
-    Map<String, dynamic>? room = allRoomMessageListMap[roomID];
-    List<dynamic> peerConnectionList = room!["peerConnectionList"];
-
-    Map<String, dynamic>? participant = peerConnectionList.firstWhere(
-      (participant) => participant["participantId"] == callerID.value,
-      orElse: () => {},
-    );
-    peerConnection = participant!['peerConnection'];
-    if (localStream == null) {
-      ll("Local stream is not initialized.");
-      return;
-    }
     await MessengerHelper().intiVideoCallSwitcher();
-
-    localStream?.getTracks().forEach((track) {
-      ll("ON VIDEO CALL START GETTING LOCAL TRACK: $track");
-      if (track.kind == 'video') {
-        track.enabled = true;
-        peerConnection?.addTrack(track, localStream!);
+    await MessengerHelper().openUserMedia(CallType.video.name);
+    Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in allRoomMessageList) room['roomID']: room};
+    for (var participant in allRoomMessageListMap[roomID]!["peerConnectionList"]) {
+      peerConnection = participant!['peerConnection'];
+      if (localStream == null) {
+        ll("Local stream is not initialized.");
+        return;
       }
-    });
+      localStream?.getTracks().forEach((track) {
+        ll("ON VIDEO CALL START GETTING LOCAL TRACK: $track");
+        if (track.kind == 'video') {
+          track.enabled = true;
+          peerConnection?.addTrack(track, localStream!);
+        }
+      });
 
-    final offer = await peerConnection!.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    socket.emit('mobile-call-${allRoomMessageListMap[roomID]!['userID']}', {
-      'userID': globalController.userId.value,
-      'roomID': roomID,
-      'callStatus': CallStatus.inCAll.name,
-      'type': "callSettings",
-      'data': "switchToVideo",
-      'sdp': offer.sdp,
-      'sdp_type': offer.type
-    });
+      final offer = await peerConnection!.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      socket.emit('mobile-call-${participant['participantId']}', {
+        'userID': globalController.userId.value,
+        'roomID': roomID,
+        'callStatus': CallStatus.inCAll.name,
+        'type': "callSettings",
+        'data': "switchToVideo",
+        'sdp': offer.sdp,
+        'sdp_type': offer.type
+      });
+    }
     isAudioCallState.value = false;
     isLocalFeedStreaming.value = true;
     Helper.setSpeakerphoneOn(true);
@@ -1056,16 +1065,24 @@ class MessengerController extends GetxController {
   Future<void> onSwitchToVideoCall(data) async {
     RTCPeerConnection? peerConnection;
     Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in allRoomMessageList) room['roomID']: room};
-    Map<String, dynamic>? room = allRoomMessageListMap[data["roomID"]];
-    List<dynamic> peerConnectionList = room!["peerConnectionList"];
+    for (var participant in allRoomMessageListMap[data["roomID"]]!["peerConnectionList"]) {
+      if (participant!['participantId'] == data['userID']) {
+        peerConnection = participant!['peerConnection'];
+        await peerConnection!.setRemoteDescription(RTCSessionDescription(data['sdp'], data['sdp_type']));
+        Helper.setSpeakerphoneOn(true);
+        int index = inCallParticipants.indexWhere((p) => p['userID'] == participant['participantId']);
 
-    Map<String, dynamic>? participant = peerConnectionList.firstWhere(
-      (participant) => participant["participantId"] == callerID.value,
-      orElse: () => {},
-    );
-    peerConnection = participant!['peerConnection'];
-    await peerConnection!.setRemoteDescription(RTCSessionDescription(data['sdp'], data['sdp_type']));
-    Helper.setSpeakerphoneOn(true);
+        if (index != -1) {
+          inCallParticipants[index]['remoteStream'] = participant['remoteStream'];
+          inCallParticipants[index]['remoteRenderer'] = participant['remoteRenderer'];
+          inCallParticipants[index]['isVideoStreaming'] = true;
+        }
+        RxList<Map<String, dynamic>> temporaryInCallParticipants = RxList([]);
+        temporaryInCallParticipants.addAll(inCallParticipants);
+        inCallParticipants.clear();
+        inCallParticipants.addAll(temporaryInCallParticipants);
+      }
+    }
   }
 
   void videoCallSwitchSDPSet(data) async {
@@ -1387,7 +1404,7 @@ class MessengerController extends GetxController {
           participant['remoteStream'] = remoteGroupStream;
           int index = inCallParticipants.indexWhere((p) => p['userID'] == participant['participantId']);
 
-          final hasVideo = event.streams[0].getVideoTracks().isNotEmpty;
+          var hasVideo = event.streams[0].getVideoTracks().isNotEmpty;
           if (index != -1) {
             inCallParticipants[index]['remoteStream'] = participant['remoteStream'];
             inCallParticipants[index]['remoteRenderer'] = participant['remoteRenderer'];

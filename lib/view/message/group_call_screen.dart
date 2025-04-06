@@ -15,8 +15,6 @@ class GroupCallScreen extends StatelessWidget {
 
     ll(asd);
     ll(messengerController.inCallParticipants);
-    ll(height);
-    ll(width);
     return Container(
       color: cWhiteColor,
       child: SafeArea(

@@ -185,7 +185,7 @@ class SocketController {
           messengerController.onCallStart(data);
         } else if (data["type"] == "callSettings") {
           if (data["data"] == "switchToAudio") {
-            messengerController.onSwitchToAudioCall(data["roomID"]);
+            messengerController.onSwitchToAudioCall(data);
           } else if (data["data"] == "switchToVideo") {
             if (data['sdp_type'] == "offer") {
               messengerController.onSwitchToVideoCall(data);

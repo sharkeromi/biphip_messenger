@@ -21,6 +21,7 @@ class MessengerHelper {
   }
 
   Future<void> intiVideoCallSwitcher() async {
+    await messengerController.localRenderer.initialize();
     var stream = await webRTC.navigator.mediaDevices.getUserMedia({'video': true, 'audio': true});
 
     messengerController.localStream = stream;
@@ -60,7 +61,7 @@ class MessengerHelper {
     Map<String, dynamic>? room = allRoomMessageListMap[roomID];
     List<dynamic> peerConnectionList = room!["peerConnectionList"];
     for (var peerConnection in peerConnectionList) {
-      if (peerConnection["remoteRenderer"].srcObject != null) {
+      if (peerConnection["remoteRenderer"] != null) {
         List<webRTC.MediaStreamTrack> remoteTracks = peerConnection["remoteRenderer"].srcObject!.getTracks();
         for (var track in remoteTracks) {
           log("remote track stopped");
