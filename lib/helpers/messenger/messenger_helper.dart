@@ -61,7 +61,7 @@ class MessengerHelper {
     Map<String, dynamic>? room = allRoomMessageListMap[roomID];
     List<dynamic> peerConnectionList = room!["peerConnectionList"];
     for (var peerConnection in peerConnectionList) {
-      if (peerConnection["remoteRenderer"] != null) {
+      if (peerConnection["remoteRenderer"] != null && peerConnection["remoteRenderer"].srcObject != null) {
         List<webRTC.MediaStreamTrack> remoteTracks = peerConnection["remoteRenderer"].srcObject!.getTracks();
         for (var track in remoteTracks) {
           log("remote track stopped");
@@ -83,7 +83,6 @@ class MessengerHelper {
     stopForegroundService();
     messengerController.disposeRenderer(roomID);
     messengerController.isInCallState.value = false;
-    messengerController.isRemoteFeedStreaming.value = false;
     messengerController.isLocalFeedStreaming.value = false;
     Get.back();
   }
@@ -95,7 +94,7 @@ class MessengerHelper {
     for (var peerConnection in peerConnectionList) {
       if (peerConnection["participantId"] == data['userID']) {
         messengerController.inCallParticipants.removeWhere((map) => map['userID'] == data['userID']);
-        if (peerConnection["remoteRenderer"] != null) {
+        if (peerConnection["remoteRenderer"] != null && peerConnection["remoteRenderer"].srcObject != null) {
           List<webRTC.MediaStreamTrack> remoteTracks = peerConnection["remoteRenderer"].srcObject!.getTracks();
           for (var track in remoteTracks) {
             log("remote track stopped");
@@ -113,6 +112,10 @@ class MessengerHelper {
           peerConnection["remoteStream"] = null;
         }
       }
+    }
+    ll("Room type: ${messengerController.roomType.value}");
+    if (messengerController.roomType.value == 1) {
+      Get.back();
     }
   }
 

@@ -1,4 +1,3 @@
-import 'package:biphip_messenger/controllers/common/global_controller.dart';
 import 'package:biphip_messenger/controllers/common/socket_controller.dart';
 import 'package:biphip_messenger/controllers/messenger/messenger_controller.dart';
 import 'package:biphip_messenger/helpers/messenger/messenger_helper.dart';
@@ -29,10 +28,10 @@ class CallScreen extends StatelessWidget {
                       mirror: true,
                       objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                     ),
-                  if (messengerController.callState.value == CallStatus.inCAll.name)
-                    messengerController.isRemoteFeedStreaming.value
+                  if (messengerController.callState.value == CallStatus.inCAll.name && messengerController.inCallParticipants.isNotEmpty)
+                    messengerController.inCallParticipants[0]["isVideoStreaming"]
                         ? RTCVideoView(
-                            messengerController.remoteRenderer,
+                            messengerController.inCallParticipants[0]["remoteRenderer"],
                             objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                           )
                         : SizedBox(
@@ -40,7 +39,8 @@ class CallScreen extends StatelessWidget {
                             width: width,
                           ),
                   if (messengerController.callState.value == CallStatus.ringing.name ||
-                      (messengerController.callState.value == CallStatus.inCAll.name && !messengerController.isRemoteFeedStreaming.value))
+                      (messengerController.callState.value == CallStatus.inCAll.name &&
+                          (messengerController.inCallParticipants.isNotEmpty && !messengerController.inCallParticipants[0]["isVideoStreaming"])))
                     Positioned(
                       top: 100,
                       child: SizedBox(
@@ -148,12 +148,7 @@ class CallScreen extends StatelessWidget {
                               ),
                             InkWell(
                               onTap: () async {
-                                socket.emit('mobile-call-${messengerController.callerID.value}', {
-                                  'userID': Get.find<GlobalController>().userId.value,
-                                  'roomID': messengerController.roomID.value,
-                                  'callStatus': CallStatus.hangUp.name,
-                                });
-                                await MessengerHelper().hangUp(messengerController.roomID.value);
+                                await messengerController.hangUp(messengerController.roomID.value);
                               },
                               child: Container(
                                 decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
