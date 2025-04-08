@@ -1003,3 +1003,5 @@ const String ksAudio = "Audio";
 const String ksVideo = "Video";
 const String ksMute = "Mute";
 const String ksAddMember = "Add Member";
+const String ksInvite = "Invite";
+const String ksInvited = "Invited";

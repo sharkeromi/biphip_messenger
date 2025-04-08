@@ -17,6 +17,7 @@ import 'package:biphip_messenger/utils/constants/imports.dart';
 import 'package:biphip_messenger/utils/constants/routes.dart';
 import 'package:biphip_messenger/utils/constants/strings.dart';
 import 'package:biphip_messenger/utils/constants/urls.dart';
+import 'package:biphip_messenger/view/message/widgets/add_member_list_content.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 
@@ -29,7 +30,6 @@ class MessengerController extends GetxController {
   final RxBool isMessageTextFieldFocused = RxBool(false);
   final RxBool isSendEnabled = RxBool(false);
   final Rx<RoomData?> selectedRoom = Rx<RoomData?>(null);
-  final RxInt selectedRoomInde = RxInt(-1);
   final AudioService audioService = AudioService();
 
   @override
@@ -48,7 +48,6 @@ class MessengerController extends GetxController {
 
   Future<void> initializeRenderer(roomID) async {
     inCallParticipants.clear();
-    ll("HERE");
     if (localRenderer.textureId == null) {
       ll("HERE Initializing localRenderer");
       localRenderer = RTCVideoRenderer();
@@ -365,13 +364,13 @@ class MessengerController extends GetxController {
   //*===================== WEB RTC FUNCTIONS ===============================*//
   final Map<String, dynamic> configuration = {
     'iceServers': [
-      {'urls': "stun:stun.l.google.com:19302"},
+      // {
+      //   'urls': "stun:stun.relay.metered.ca:80",
+      // },
       {
-        "urls": [
-          "turn:54.91.252.241:3478",
-        ],
-        "username": "user1",
-        "credential": "123456",
+        'urls': "turn:global.relay.metered.ca:80",
+        'username': "534be0647f0d266fadcada02",
+        'credential': "V6A4BSMjDnrbIFA6",
       },
     ],
   };
@@ -730,11 +729,9 @@ class MessengerController extends GetxController {
     }
     await initializeRenderer(roomID);
     await initiateVideoCall(roomId, callType, selectedRoomType);
-    if (selectedRoomType == 1) {
-      Get.toNamed(krCallScreen);
-    } else {
-      Get.toNamed(krGroupCallScreen);
-    }
+
+    Get.toNamed(krGroupCallScreen);
+    inviteMemberList.clear();
     if (callType == CallType.video.name) {
       await audioService.playAudio(callerTunePath, isSpeaker: true);
     } else {
@@ -848,7 +845,7 @@ class MessengerController extends GetxController {
   }
 
   //Accept call from receiver
-  void onAcceptCall(roomID, callType) async {
+  void onAcceptCall(roomID) async {
     // try {
     await initializeRenderer(roomID);
     await MessengerHelper().openUserMedia(isAudioCallState.value ? CallType.audio.name : CallType.video.name);
@@ -932,11 +929,8 @@ class MessengerController extends GetxController {
 
     callState.value = CallStatus.inCAll.name;
     await audioService.stopAudio();
-    if (callType == 1) {
-      Get.offAndToNamed(krCallScreen);
-    } else {
-      Get.offAndToNamed(krGroupCallScreen);
-    }
+    Get.offAndToNamed(krGroupCallScreen);
+
     // } catch (e) {
     //   ll("EXCEPTION: $e");
     // }
@@ -1093,6 +1087,9 @@ class MessengerController extends GetxController {
     Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in allRoomMessageList) room['roomID']: room};
     for (var participant in allRoomMessageListMap[data["roomID"]]!["peerConnectionList"]) {
       if (participant!['participantId'] == data['userID']) {
+        var renderer = RTCVideoRenderer();
+        await renderer.initialize();
+        participant['remoteRenderer'] = renderer;
         peerConnection = participant!['peerConnection'];
         await peerConnection!.setRemoteDescription(RTCSessionDescription(data['sdp'], data['sdp_type']));
         Helper.setSpeakerphoneOn(true);
@@ -1468,5 +1465,28 @@ class MessengerController extends GetxController {
         }
       }
     };
+  }
+
+  final RxList<User> memberList = RxList<User>([]);
+  final RxList<User> inviteMemberList = RxList<User>([]);
+  Future<void> goToAddMemberToCall(context) async {
+    memberList.clear();
+    Get.find<GlobalController>().commonBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        bottomSheetHeight: height * 0.6,
+        content: MemberListContent(),
+        onPressCloseButton: () {
+          Get.back();
+        },
+        onPressRightButton: () {},
+        rightText: ksDone.tr,
+        rightTextStyle: regular14TextStyle(cPrimaryColor),
+        title: ksAddMember.tr,
+        isRightButtonShow: false);
+    await getUserList();
+    memberList.addAll(userList.where((user) {
+      return !inCallParticipants.any((participant) => participant['userID'] == user.id);
+    }).toList());
   }
 }
