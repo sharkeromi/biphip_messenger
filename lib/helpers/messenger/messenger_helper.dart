@@ -57,12 +57,9 @@ class MessengerHelper {
       messengerController.localStream = null;
     }
 
-    Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in messengerController.allRoomMessageList) room['roomID']: room};
-    Map<String, dynamic>? room = allRoomMessageListMap[roomID];
-    List<dynamic> peerConnectionList = room!["peerConnectionList"];
-    for (var peerConnection in peerConnectionList) {
-      if (peerConnection["remoteRenderer"] != null && peerConnection["remoteRenderer"].srcObject != null) {
-        List<webRTC.MediaStreamTrack> remoteTracks = peerConnection["remoteRenderer"].srcObject!.getTracks();
+    for (var participant in messengerController.inCallParticipants) {
+      if (participant["remoteRenderer"] != null && participant["remoteRenderer"].srcObject != null) {
+        List<webRTC.MediaStreamTrack> remoteTracks = participant["remoteRenderer"].srcObject!.getTracks();
         for (var track in remoteTracks) {
           log("remote track stopped");
           track.stop();
@@ -70,13 +67,13 @@ class MessengerHelper {
       }
 
       // Stop remoteStream tracks
-      if (peerConnection["remoteStream"] != null) {
-        peerConnection["remoteStream"].getTracks().forEach((track) async {
+      if (participant["remoteStream"] != null) {
+        participant["remoteStream"].getTracks().forEach((track) async {
           log("Remote stopped");
           await track.stop();
         });
-        await peerConnection["remoteStream"].dispose();
-        peerConnection["remoteStream"] = null;
+        await participant["remoteStream"].dispose();
+        participant["remoteStream"] = null;
       }
     }
 
@@ -88,14 +85,10 @@ class MessengerHelper {
   }
 
   Future<void> onHangUp(data) async {
-    Map<int, Map<String, dynamic>> allRoomMessageListMap = {for (var room in messengerController.allRoomMessageList) room['roomID']: room};
-    Map<String, dynamic>? room = allRoomMessageListMap[data['roomID']];
-    List<dynamic> peerConnectionList = room!["peerConnectionList"];
-    for (var peerConnection in peerConnectionList) {
-      if (peerConnection["participantId"] == data['userID']) {
-        messengerController.inCallParticipants.removeWhere((map) => map['userID'] == data['userID']);
-        if (peerConnection["remoteRenderer"] != null && peerConnection["remoteRenderer"].srcObject != null) {
-          List<webRTC.MediaStreamTrack> remoteTracks = peerConnection["remoteRenderer"].srcObject!.getTracks();
+    for (var participant in messengerController.inCallParticipants) {
+      if (participant["userID"] == data['userID']) {
+        if (participant["remoteRenderer"] != null && participant["remoteRenderer"].srcObject != null) {
+          List<webRTC.MediaStreamTrack> remoteTracks = participant["remoteRenderer"].srcObject!.getTracks();
           for (var track in remoteTracks) {
             log("remote track stopped");
             track.stop();
@@ -103,16 +96,17 @@ class MessengerHelper {
         }
 
         // Stop remoteStream tracks
-        if (peerConnection["remoteStream"] != null) {
-          peerConnection["remoteStream"].getTracks().forEach((track) async {
+        if (participant["remoteStream"] != null) {
+          participant["remoteStream"].getTracks().forEach((track) async {
             log("Remote stopped");
             await track.stop();
           });
-          await peerConnection["remoteStream"].dispose();
-          peerConnection["remoteStream"] = null;
+          await participant["remoteStream"].dispose();
+          participant["remoteStream"] = null;
         }
       }
     }
+    messengerController.inCallParticipants.removeWhere((map) => map['userID'] == data['userID']);
     ll("Room type: ${messengerController.roomType.value}");
     if (messengerController.roomType.value == 1) {
       Get.back();
