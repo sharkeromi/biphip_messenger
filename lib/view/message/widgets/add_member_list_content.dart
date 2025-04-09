@@ -54,8 +54,8 @@ class MemberListContent extends StatelessWidget {
                           isSelected: messengerController.inviteMemberList.any((invitedMember) {
                             return member.id == invitedMember.id;
                           }),
-                          onSelected: (value) {
-                            messengerController.inviteMemberList.add(member);
+                          onSelected: (value) async {
+                            await messengerController.inviteUser(member);
                           },
                         ),
                       ),

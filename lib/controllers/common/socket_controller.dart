@@ -292,6 +292,23 @@ class SocketController {
         setGroupPeerConnection(data['roomID'], data['userID'], peerConnection);
       }
     });
+
+    socket.on('call-invite-${Get.find<GlobalController>().userId.value}', (data) async {
+      if(data['callStatus']!=null){
+      messengerController.callState.value = data['callStatus'];
+      }
+      if (data['callStatus'] == CallStatus.ringing.name) {
+        messengerController.onInvitationRing(data);
+      }else if(data['callStatus'] == CallStatus.inCAll.name){
+        if(data['type'] == EmitType.offer.name){
+          messengerController.onInvitationOffer(data);
+        }else if(data['type'] == EmitType.answer.name){
+          messengerController.onInvitationAnswer(data);
+        }else if(data['type'] == EmitType.candidate.name){
+          messengerController.onInvitationCandidate(data);
+        }
+      }
+    });
   }
 
   void setGroupPeerConnection(roomID, userID, peerConnection) {

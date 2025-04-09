@@ -58,7 +58,7 @@ class MessengerController extends GetxController {
     for (var participant in allRoomMessageListMap[roomID]!["peerConnectionList"]) {
       var remoteRenderer = RTCVideoRenderer();
       await remoteRenderer.initialize();
-      participant["remoteRenderer"] = remoteRenderer;
+      participant['remoteRenderer'] = remoteRenderer;
       // inCallParticipants
       //     .add({'userID': participant['participantId'], 'remoteStream': participant['remoteStream'], 'remoteRenderer': participant["remoteRenderer"]});
       allRoomMessageList.clear();
@@ -72,9 +72,9 @@ class MessengerController extends GetxController {
     Map<String, dynamic>? room = allRoomMessageListMap[roomID];
     List<dynamic> peerConnectionList = room!["peerConnectionList"];
     for (var participants in peerConnectionList) {
-      if (participants["remoteRenderer"] != null) {
-        participants["remoteRenderer"].srcObject = null;
-        participants["remoteRenderer"].dispose();
+      if (participants['remoteRenderer'] != null) {
+        participants['remoteRenderer'].srcObject = null;
+        participants['remoteRenderer'].dispose();
       }
     }
   }
@@ -176,14 +176,14 @@ class MessengerController extends GetxController {
       for (var participants in roomList[i].participants!) {
         if (participants.userId != globalController.userId.value) {
           peerConnectionList.add({
-            "participantId": participants.userId,
-            "participantName": participants.userNickname,
-            "participantImage": participants.userImage,
-            "peerConnection": null,
-            "dataChannel": null,
-            "dataChannelLabel": "",
-            "remoteStream": null,
-            "remoteRenderer": null,
+            'participantId': participants.userId,
+            'participantName': participants.userNickname,
+            'participantImage': participants.userImage,
+            'peerConnection': null,
+            'dataChannel': null,
+            'dataChannelLabel': "",
+            'remoteStream': null,
+            'remoteRenderer': null,
           });
         }
       }
@@ -537,6 +537,7 @@ class MessengerController extends GetxController {
               'userID': participant['participantId'],
               'userName': participant['participantName'],
               'userImage': participant['participantImage'],
+              'peerConnection': participant['peerConnection'],
               'remoteStream': participant['remoteStream'],
               'remoteRenderer': participant['remoteRenderer'],
               'isVideoStreaming': hasVideo,
@@ -710,10 +711,12 @@ class MessengerController extends GetxController {
 
   final RxList<Map<String, dynamic>> callOfferList = RxList([]);
   final RxList<Map<String, dynamic>> inCallParticipants = RxList([]);
+  final RxString callTypeVariable = RxString("");
 
   //Ring function for Sender
   Future<void> ringUser(roomId, String callType, selectedRoomType) async {
     isUserTypeSender.value = true;
+    callTypeVariable.value = callType;
     roomType.value = selectedRoomType;
     roomID.value = selectedRoom.value!.id!;
     callerID.value = selectedRoom.value!.roomUserId ?? 0;
@@ -773,6 +776,7 @@ class MessengerController extends GetxController {
         'roomType': roomType,
         'callStatus': CallStatus.ringing.name,
         'callType': callType,
+        'isInvited': false
       });
       socket.emit('mobile-call-${participant['participantId']}', {
         'userID': Get.find<GlobalController>().userId.value,
@@ -809,6 +813,7 @@ class MessengerController extends GetxController {
     roomID.value = data['roomID'];
     callerID.value = data['userID'];
     roomType.value = data['roomType'];
+    isInvited.value = data['isInvited'];
     if (data['callType'] == CallType.audio.name) {
       isAudioCallState.value = true;
     } else {
@@ -1024,7 +1029,7 @@ class MessengerController extends GetxController {
           track.stop();
         }
         participant['remoteRenderer'].dispose();
-        participant["remoteRenderer"] = null;
+        participant['remoteRenderer'] = null;
         int index = inCallParticipants.indexWhere((p) => p['userID'] == participant['participantId']);
 
         if (index != -1) {
@@ -1435,6 +1440,7 @@ class MessengerController extends GetxController {
               'userID': participant['participantId'],
               'userName': participant['participantName'],
               'userImage': participant['participantImage'],
+              'peerConnection': participant['peerConnection'],
               'remoteStream': participant['remoteStream'],
               'remoteRenderer': participant['remoteRenderer'],
               'isVideoStreaming': hasVideo,
@@ -1469,6 +1475,7 @@ class MessengerController extends GetxController {
 
   final RxList<User> memberList = RxList<User>([]);
   final RxList<User> inviteMemberList = RxList<User>([]);
+  final RxBool isInvited = RxBool(false);
   Future<void> goToAddMemberToCall(context) async {
     memberList.clear();
     Get.find<GlobalController>().commonBottomSheet(
@@ -1488,5 +1495,299 @@ class MessengerController extends GetxController {
     memberList.addAll(userList.where((user) {
       return !inCallParticipants.any((participant) => participant['userID'] == user.id);
     }).toList());
+  }
+
+  Future<void> inviteUser(member) async {
+    inviteMemberList.add(member);
+    List callParticipantIDList = [];
+    callParticipantIDList = inCallParticipants
+        .map((e) => {
+              "userID": e["userID"],
+              "userName": e["userName"],
+              "userImage": e["userImage"],
+            })
+        .toList();
+    callParticipantIDList.add({
+      "userID": Get.find<GlobalController>().userId.value,
+      "userName": Get.find<GlobalController>().userName.value,
+      "userImage": Get.find<GlobalController>().userImage.value,
+    });
+    socket.emit('call-invite-${member.id}', {
+      'userID': Get.find<GlobalController>().userId.value,
+      "userName": Get.find<GlobalController>().userName.value,
+      "userImage": Get.find<GlobalController>().userImage.value,
+      'callStatus': CallStatus.ringing.name,
+      'callType': callTypeVariable.value,
+      'callParticipantID': callParticipantIDList
+    });
+  }
+
+  void onInvitationRing(data) {
+    inCallParticipants.clear();
+    Get.toNamed(krRingingScreen);
+    audioService.playAudio(ringtonePath, isSpeaker: true);
+    isInvited.value = true;
+    callerName.value = data['userName'];
+    callerImage.value = data['userImage'];
+    isAudioCallState.value = data['callType'] == CallType.audio.name;
+    callTypeVariable.value = data['callType'];
+    for (var participant in data['callParticipantID']) {
+      inCallParticipants.add({
+        'userID': participant['userID'],
+        'userName': participant['userName'],
+        'userImage': participant['userImage'],
+        'peerConnection': null,
+        'remoteStream': null,
+        'remoteRenderer': null,
+        'isVideoStreaming': false,
+      });
+    }
+  }
+
+  Future<void> onInvitationAccept() async {
+    localRenderer = RTCVideoRenderer();
+    await localRenderer.initialize();
+    await MessengerHelper().openUserMedia(callTypeVariable.value);
+
+    for (var participant in inCallParticipants) {
+      RTCPeerConnection? peerConnection;
+      RTCSessionDescription? offer;
+
+      var remoteRenderer = RTCVideoRenderer();
+      await remoteRenderer.initialize();
+      participant['remoteRenderer'] = remoteRenderer;
+
+      if (participant['peerConnection'] == null) {
+        peerConnection = await createPeerConnection(configuration);
+        participant['peerConnection'] = peerConnection;
+        registerInvitationPeerConnectionListeners(peerConnection, participant['userID']);
+      } else {
+        peerConnection = participant['peerConnection'];
+      }
+
+      localStream?.getTracks().forEach((track) async {
+        ll("ON ANSWER VIDEO CALL GETTING LOCAL TRACK: $track");
+        await peerConnection!.addTrack(track, localStream!);
+      });
+
+      if (isAudioCallState.value) {
+        offer = await peerConnection!.createOffer({
+          'offerToReceiveAudio': true,
+          'offerToReceiveVideo': false,
+        });
+      } else {
+        offer = await peerConnection!.createOffer();
+      }
+      await peerConnection.setLocalDescription(offer);
+      socket.emit('call-invite-${participant['userID']}', {
+        'userID': Get.find<GlobalController>().userId.value,
+        'userName': Get.find<GlobalController>().userName.value,
+        'userImage': Get.find<GlobalController>().userImage.value,
+        'type': "offer",
+        'callStatus': CallStatus.inCAll.name,
+        'data': {
+          'sdp': offer.sdp,
+          'type': offer.type,
+        },
+      });
+      peerConnection.onIceCandidate = (RTCIceCandidate candidate) {
+        ll("GENERATED ICE CANDIDATE");
+        socket.emit('call-invite-${participant['userID']}', {
+          'userID': Get.find<GlobalController>().userId.value,
+          'type': "candidate",
+          'callStatus': CallStatus.inCAll.name,
+          'data': {
+            'candidate': candidate.candidate,
+            'sdpMid': candidate.sdpMid,
+            'sdpMLineIndex': candidate.sdpMLineIndex,
+          }
+        });
+      };
+    }
+    if (isAudioCallState.value) {
+      Helper.setSpeakerphoneOn(false);
+    } else {
+      Helper.setSpeakerphoneOn(true);
+    }
+    audioService.stopAudio();
+    Get.offAndToNamed(krGroupCallScreen);
+    isInCallState.value = true;
+    callState.value = CallStatus.inCAll.name;
+  }
+
+  Future<void> onInvitationOffer(data) async {
+    var remoteRenderer = RTCVideoRenderer();
+    await remoteRenderer.initialize();
+
+    RTCPeerConnection? peerConnection;
+    peerConnection = await createPeerConnection(configuration);
+    registerInvitationPeerConnectionListeners(peerConnection, data['userID']);
+    localStream?.getTracks().forEach((track) async {
+      ll("ON ANSWER VIDEO CALL GETTING LOCAL TRACK: $track");
+      await peerConnection!.addTrack(track, localStream!);
+    });
+    RTCSessionDescription description = RTCSessionDescription(data['data']['sdp'], data['data']['type']);
+    try {
+      await peerConnection.setRemoteDescription(description);
+      ll("Remote description set successfully.: ${description.sdp}");
+    } catch (e) {
+      ll("Error setting remote description: $e");
+      return;
+    }
+    inCallParticipants.add({
+      'userID': data['userID'],
+      'userName': data['userName'],
+      'userImage': data['userImage'],
+      'peerConnection': peerConnection,
+      'remoteStream': null,
+      'remoteRenderer': remoteRenderer,
+      'isVideoStreaming': false,
+    });
+    peerConnection.onIceCandidate = (RTCIceCandidate candidate) {
+      ll("GENERATED ICE CANDIDATE");
+      socket.emit('call-invite-${data['userID']}', {
+        'userID': Get.find<GlobalController>().userId.value,
+        'type': "candidate",
+        'callStatus': CallStatus.inCAll.name,
+        'data': {
+          'candidate': candidate.candidate,
+          'sdpMid': candidate.sdpMid,
+          'sdpMLineIndex': candidate.sdpMLineIndex,
+        }
+      });
+    };
+  }
+
+  void onInvitationAnswer(data) {
+    for (var participant in inCallParticipants) {
+      if (participant['userID'] == data['userID']) {
+        participant['peerConnection'].setRemoteDescription(RTCSessionDescription(data['data']['sdp'], data['data']['type']));
+        RxList<Map<String, dynamic>> temporaryInCallParticipants = RxList([]);
+        temporaryInCallParticipants.addAll(inCallParticipants);
+        inCallParticipants.clear();
+        inCallParticipants.addAll(temporaryInCallParticipants);
+        break;
+      }
+    }
+  }
+
+  void onInvitationCandidate(data) {
+    for (var participant in inCallParticipants) {
+      if (participant['userID'] == data['userID']) {
+        participant['peerConnection'].addCandidate(
+          RTCIceCandidate(
+            data['data']['candidate'],
+            data['data']['sdpMid'],
+            data['data']['sdpMLineIndex'],
+          ),
+        );
+        RxList<Map<String, dynamic>> temporaryInCallParticipants = RxList([]);
+        temporaryInCallParticipants.addAll(inCallParticipants);
+        inCallParticipants.clear();
+        inCallParticipants.addAll(temporaryInCallParticipants);
+        break;
+      }
+    }
+  }
+
+  void registerInvitationPeerConnectionListeners(RTCPeerConnection? peerConnection, userID,) {
+    peerConnection?.onConnectionState = (RTCPeerConnectionState state) async {
+      ll('Connection state change: $state');
+      if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed) {
+        await peerConnection.restartIce();
+      }
+    };
+
+    peerConnection?.onSignalingState = (RTCSignalingState state) async {
+      ll('Signaling state change: $state for $userID');
+      if (state == RTCSignalingState.RTCSignalingStateHaveRemoteOffer) {
+        try {
+          var answer = await peerConnection.createAnswer();
+          ll('Created Answer $answer');
+          await peerConnection.setLocalDescription(answer);
+          if (isInCallState.value) {
+            ll("IN CALL STATE WITH $userID");
+            socket.emit('call-invite-$userID', {
+              'userID': globalController.userId.value,
+              'callStatus': CallStatus.inCAll.name,
+              'type': EmitType.answer.name,
+              'data': {
+                'sdp': answer.sdp,
+                'type': answer.type,
+              }
+            });
+          }
+          for (var participant in inCallParticipants) {
+            if (participant['userID'] == userID) {
+              participant['peerConnection'] = peerConnection;
+              break;
+            }
+          }
+        } catch (e) {
+          ll("EXCEPTION Registering: $e");
+        }
+      }
+    };
+
+    peerConnection?.onIceGatheringState = (RTCIceGatheringState state) {
+      ll('ICE connection state change: $state');
+    };
+
+    peerConnection?.onRenegotiationNeeded = () {
+      ll("RE NEGOTIATION NEEDED");
+      if (isNegotiating.value) {
+        ll("Skipping renegotiation to prevent collision.");
+        return;
+      }
+    };
+
+    peerConnection?.onTrack = (RTCTrackEvent event) async {
+      MediaStream? remoteGroupStream;
+
+      ll('Got remote track sc: ${event.streams[0]}');
+
+      ll('Initializing remoteStream for $userID');
+      for (var participant in inCallParticipants) {
+        if (participant['userID'] == userID) {
+          remoteGroupStream = await createLocalMediaStream('remoteStream');
+          event.streams[0].getTracks().forEach((track) {
+            ll('Add a track to the remoteStream: $track');
+            remoteGroupStream?.addTrack(track);
+            participant['remoteRenderer'].srcObject = remoteGroupStream;
+          });
+          participant['remoteStream'] = remoteGroupStream;
+
+          var hasVideo = event.streams[0].getVideoTracks().isNotEmpty;
+          participant['isVideoStreaming'] = hasVideo;
+
+          RxList<Map<String, dynamic>> temporaryInCallParticipants = RxList([]);
+          temporaryInCallParticipants.addAll(inCallParticipants);
+          inCallParticipants.clear();
+          inCallParticipants.addAll(temporaryInCallParticipants);
+          break;
+        }
+      }
+    };
+
+    peerConnection?.onAddTrack = (MediaStream stream, MediaStreamTrack track) async {
+      MediaStream? remoteGroupStream;
+      ll("GETTING REMOTE TRACK SC: $track ${stream.id}");
+      ll("Getting remote track from $userID");
+
+      ll('Initializing remoteStream');
+      for (var participant in inCallParticipants) {
+        if (participant['userID'] == userID) {
+          remoteGroupStream = await createLocalMediaStream('remoteStream');
+          participant['remoteRenderer'].srcObject = stream;
+          remoteGroupStream = stream;
+          participant['remoteStream'] = remoteGroupStream;
+          RxList<Map<String, dynamic>> temporaryInCallParticipants = RxList([]);
+          temporaryInCallParticipants.addAll(inCallParticipants);
+          inCallParticipants.clear();
+          inCallParticipants.addAll(temporaryInCallParticipants);
+          break;
+        }
+      }
+    };
   }
 }
