@@ -1,5 +1,3 @@
-
-
 import 'package:biphip_messenger/controllers/messenger/messenger_controller.dart';
 import 'package:biphip_messenger/utils/constants/imports.dart';
 import 'package:biphip_messenger/utils/constants/strings.dart';
@@ -15,13 +13,14 @@ class ChatTextField extends StatelessWidget {
           color: cWhiteColor,
           width: width,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 if (!messengerController.isMessageTextFieldFocused.value)
                   Padding(
-                    padding: const EdgeInsets.only(right: k12Padding, bottom: 14),
+                    padding: const EdgeInsets.only(
+                      right: k12Padding,
+                    ),
                     child: Icon(
                       BipHip.voiceFill,
                       color: cPrimaryColor,
@@ -29,7 +28,9 @@ class ChatTextField extends StatelessWidget {
                   ),
                 if (!messengerController.isMessageTextFieldFocused.value)
                   Padding(
-                    padding: const EdgeInsets.only(right: k12Padding, bottom: 14),
+                    padding: const EdgeInsets.only(
+                      right: k12Padding,
+                    ),
                     child: Icon(
                       BipHip.imageFile,
                       color: cPrimaryColor,
@@ -37,7 +38,9 @@ class ChatTextField extends StatelessWidget {
                   ),
                 if (!messengerController.isMessageTextFieldFocused.value)
                   Padding(
-                    padding: const EdgeInsets.only(right: k12Padding, bottom: 14),
+                    padding: const EdgeInsets.only(
+                      right: k12Padding,
+                    ),
                     child: Icon(
                       BipHip.sticker,
                       color: cPrimaryColor,
@@ -45,7 +48,9 @@ class ChatTextField extends StatelessWidget {
                   ),
                 if (!messengerController.isMessageTextFieldFocused.value)
                   Padding(
-                    padding: const EdgeInsets.only(right: k12Padding, bottom: 14),
+                    padding: const EdgeInsets.only(
+                      right: k12Padding,
+                    ),
                     child: Icon(
                       BipHip.gif,
                       color: cPrimaryColor,
@@ -53,7 +58,9 @@ class ChatTextField extends StatelessWidget {
                   ),
                 if (messengerController.isMessageTextFieldFocused.value)
                   Padding(
-                    padding: const EdgeInsets.only(right: k8Padding, bottom: 10),
+                    padding: const EdgeInsets.only(
+                      right: k8Padding,
+                    ),
                     child: SizedBox(
                       width: 25,
                       child: InkWell(
@@ -70,7 +77,7 @@ class ChatTextField extends StatelessWidget {
                   ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.only(top: 0),
                     child: Column(
                       children: [
                         Stack(
@@ -92,7 +99,7 @@ class ChatTextField extends StatelessWidget {
                               },
                             ),
                             Positioned(
-                                bottom: 12,
+                                bottom: 5,
                                 right: 4,
                                 child: Icon(
                                   BipHip.emoji,
@@ -106,15 +113,24 @@ class ChatTextField extends StatelessWidget {
                 ),
                 if (!messengerController.isSendEnabled.value)
                   Padding(
-                    padding: const EdgeInsets.only(left: k8Padding, bottom: 14),
-                    child: Icon(
-                      BipHip.love,
-                      color: cRedColor,
+                    padding: const EdgeInsets.only(
+                      left: k8Padding,
+                    ),
+                    child: InkWell(
+                      onTap: () {
+                        messengerController.sendMessage("\u2764\uFE0F", messengerController.selectedRoom.value!.id);
+                      },
+                      child: Icon(
+                        BipHip.love,
+                        color: cRedColor,
+                      ),
                     ),
                   ),
                 if (messengerController.isSendEnabled.value)
                   Padding(
-                    padding: const EdgeInsets.only(left: k8Padding, bottom: 14),
+                    padding: const EdgeInsets.only(
+                      left: k8Padding,
+                    ),
                     child: InkWell(
                       onTap: messengerController.isSendEnabled.value
                           ? () {
