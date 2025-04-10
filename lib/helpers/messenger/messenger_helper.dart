@@ -38,6 +38,9 @@ class MessengerHelper {
 
   Future<void> hangUp(roomID) async {
     await AudioService().stopAudio();
+    messengerController.isInCallState.value = false;
+    messengerController.isLocalFeedStreaming.value = false;
+    Get.back();
     // Stop localRenderer tracks
     if (messengerController.localRenderer.srcObject != null) {
       List<webRTC.MediaStreamTrack> localTracks = messengerController.localRenderer.srcObject!.getTracks();
@@ -57,7 +60,27 @@ class MessengerHelper {
       messengerController.localStream = null;
     }
 
-    for (var participant in messengerController.inCallParticipants) {
+    for (var participant in messengerController.joinedParticipants) {
+      if (participant["remoteRenderer"] != null && participant["remoteRenderer"].srcObject != null) {
+        List<webRTC.MediaStreamTrack> remoteTracks = participant["remoteRenderer"].srcObject!.getTracks();
+        for (var track in remoteTracks) {
+          log("remote track stopped");
+          track.stop();
+        }
+      }
+
+      // Stop remoteStream tracks
+      if (participant["remoteStream"] != null) {
+        participant["remoteStream"].getTracks().forEach((track) async {
+          log("Remote stopped");
+          await track.stop();
+        });
+        await participant["remoteStream"].dispose();
+        participant["remoteStream"] = null;
+      }
+    }
+
+    for (var participant in messengerController.callParticipants) {
       if (participant["remoteRenderer"] != null && participant["remoteRenderer"].srcObject != null) {
         List<webRTC.MediaStreamTrack> remoteTracks = participant["remoteRenderer"].srcObject!.getTracks();
         for (var track in remoteTracks) {
@@ -81,11 +104,10 @@ class MessengerHelper {
     messengerController.disposeRenderer(roomID);
     messengerController.isInCallState.value = false;
     messengerController.isLocalFeedStreaming.value = false;
-    Get.back();
   }
 
   Future<void> onHangUp(data) async {
-    for (var participant in messengerController.inCallParticipants) {
+    for (var participant in messengerController.joinedParticipants) {
       if (participant["userID"] == data['userID']) {
         if (participant["remoteRenderer"] != null && participant["remoteRenderer"].srcObject != null) {
           List<webRTC.MediaStreamTrack> remoteTracks = participant["remoteRenderer"].srcObject!.getTracks();
@@ -106,8 +128,30 @@ class MessengerHelper {
         }
       }
     }
-    messengerController.inCallParticipants.removeWhere((map) => map['userID'] == data['userID']);
-    ll("Room type: ${messengerController.roomType.value}");
+
+    for (var participant in messengerController.callParticipants) {
+      if (participant["userID"] == data['userID']) {
+        if (participant["remoteRenderer"] != null && participant["remoteRenderer"].srcObject != null) {
+          List<webRTC.MediaStreamTrack> remoteTracks = participant["remoteRenderer"].srcObject!.getTracks();
+          for (var track in remoteTracks) {
+            log("remote track stopped");
+            track.stop();
+          }
+        }
+
+        // Stop remoteStream tracks
+        if (participant["remoteStream"] != null) {
+          participant["remoteStream"].getTracks().forEach((track) async {
+            log("Remote stopped");
+            await track.stop();
+          });
+          await participant["remoteStream"].dispose();
+          participant["remoteStream"] = null;
+        }
+      }
+    }
+    messengerController.callParticipants.removeWhere((map) => map['userID'] == data['userID']);
+    messengerController.joinedParticipants.removeWhere((map) => map['userID'] == data['userID']);
     if (messengerController.roomType.value == 1) {
       Get.back();
     }

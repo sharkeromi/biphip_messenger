@@ -171,8 +171,9 @@ class SocketController {
     });
 
     socket.on('mobile-call-${Get.find<GlobalController>().userId.value}', (data) async {
-      if(data['callStatus']!=null){
-      messengerController.callState.value = data['callStatus'];
+      ll("CALL DATA: $data");
+      if (data['callStatus'] != null) {
+        messengerController.callState.value = data['callStatus'];
       }
       if (data['callStatus'] == CallStatus.ringing.name) {
         messengerController.onCallRing(data);
@@ -194,7 +195,7 @@ class SocketController {
             }
           }
         }
-      }else if(data['type']== EmitType.offer.name){
+      } else if (data['type'] == EmitType.offer.name) {
         messengerController.saveOffers(data);
       }
     });
@@ -294,17 +295,17 @@ class SocketController {
     });
 
     socket.on('call-invite-${Get.find<GlobalController>().userId.value}', (data) async {
-      if(data['callStatus']!=null){
-      messengerController.callState.value = data['callStatus'];
+      if (data['callStatus'] != null) {
+        messengerController.callState.value = data['callStatus'];
       }
       if (data['callStatus'] == CallStatus.ringing.name) {
         messengerController.onInvitationRing(data);
-      }else if(data['callStatus'] == CallStatus.inCAll.name){
-        if(data['type'] == EmitType.offer.name){
+      } else if (data['callStatus'] == CallStatus.inCAll.name) {
+        if (data['type'] == EmitType.offer.name) {
           messengerController.onInvitationOffer(data);
-        }else if(data['type'] == EmitType.answer.name){
+        } else if (data['type'] == EmitType.answer.name) {
           messengerController.onInvitationAnswer(data);
-        }else if(data['type'] == EmitType.candidate.name){
+        } else if (data['type'] == EmitType.candidate.name) {
           messengerController.onInvitationCandidate(data);
         }
       }

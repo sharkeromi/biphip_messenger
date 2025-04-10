@@ -1,5 +1,4 @@
 import 'package:biphip_messenger/controllers/common/global_controller.dart';
-import 'package:biphip_messenger/controllers/common/socket_controller.dart';
 import 'package:biphip_messenger/controllers/messenger/messenger_controller.dart';
 import 'package:biphip_messenger/helpers/messenger/messenger_helper.dart';
 import 'package:biphip_messenger/utils/constants/imports.dart';
@@ -11,10 +10,8 @@ class GroupCallScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Map<String?, Map<String, dynamic>> asd = {for (var room in messengerController.allRoomMessageList) room['roomID'].toString(): room};
-
-    ll(asd);
-    ll(messengerController.inCallParticipants);
+    ll(messengerController.joinedParticipants);
+    ll(messengerController.isLocalFeedStreaming.value);
     return Container(
       color: cWhiteColor,
       child: SafeArea(
@@ -30,14 +27,15 @@ class GroupCallScreen extends StatelessWidget {
                 ),
                 child: Stack(
                   children: [
-                    if (messengerController.inCallParticipants.isEmpty)
+                    if (messengerController.joinedParticipants.isEmpty)
                       Stack(
                         children: [
-                          RTCVideoView(
-                            messengerController.localRenderer,
-                            mirror: true,
-                            objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                          ),
+                          if (messengerController.isLocalFeedStreaming.value)
+                            RTCVideoView(
+                              messengerController.localRenderer,
+                              mirror: true,
+                              objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                            ),
                           Positioned(
                             top: 100,
                             child: SizedBox(
@@ -79,12 +77,12 @@ class GroupCallScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                    if (messengerController.inCallParticipants.length == 1)
+                    if (messengerController.joinedParticipants.length == 1)
                       Stack(
                         children: [
-                          messengerController.inCallParticipants[0]["isVideoStreaming"]
+                          messengerController.joinedParticipants[0]["isVideoStreaming"]
                               ? RTCVideoView(
-                                  messengerController.inCallParticipants[0]["remoteRenderer"],
+                                  messengerController.joinedParticipants[0]["remoteRenderer"],
                                   objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                                 )
                               : Container(
@@ -104,7 +102,7 @@ class GroupCallScreen extends StatelessWidget {
                                         ),
                                         child: ClipOval(
                                           child: Image.network(
-                                            messengerController.inCallParticipants[0]["userImage"].toString(),
+                                            messengerController.joinedParticipants[0]["userImage"].toString(),
                                             fit: BoxFit.cover,
                                             filterQuality: FilterQuality.high,
                                             errorBuilder: (context, error, stackTrace) => imageErrorBuilderCover(
@@ -119,7 +117,7 @@ class GroupCallScreen extends StatelessWidget {
                                         ),
                                       ),
                                       kH20sizedBox,
-                                      Text(messengerController.inCallParticipants[0]["userName"]),
+                                      Text(messengerController.joinedParticipants[0]["userName"]),
                                     ],
                                   ),
                                 ),
@@ -145,7 +143,7 @@ class GroupCallScreen extends StatelessWidget {
                             )
                         ],
                       ),
-                    if (messengerController.inCallParticipants.length == 2)
+                    if (messengerController.joinedParticipants.length == 2)
                       SizedBox(
                         height: height,
                         width: width,
@@ -156,9 +154,9 @@ class GroupCallScreen extends StatelessWidget {
                                 children: [
                                   SizedBox(
                                     width: width / 2,
-                                    child: messengerController.inCallParticipants[0]["isVideoStreaming"]
+                                    child: messengerController.joinedParticipants[0]["isVideoStreaming"]
                                         ? RTCVideoView(
-                                            messengerController.inCallParticipants[0]["remoteRenderer"],
+                                            messengerController.joinedParticipants[0]["remoteRenderer"],
                                             objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                                           )
                                         : Container(
@@ -177,7 +175,7 @@ class GroupCallScreen extends StatelessWidget {
                                                   ),
                                                   child: ClipOval(
                                                     child: Image.network(
-                                                      messengerController.inCallParticipants[0]["userImage"].toString(),
+                                                      messengerController.joinedParticipants[0]["userImage"].toString(),
                                                       fit: BoxFit.cover,
                                                       filterQuality: FilterQuality.high,
                                                       errorBuilder: (context, error, stackTrace) => imageErrorBuilderCover(
@@ -192,16 +190,16 @@ class GroupCallScreen extends StatelessWidget {
                                                   ),
                                                 ),
                                                 kH20sizedBox,
-                                                Text(messengerController.inCallParticipants[0]["userName"]),
+                                                Text(messengerController.joinedParticipants[0]["userName"]),
                                               ],
                                             ),
                                           ),
                                   ),
                                   SizedBox(
                                     width: width / 2,
-                                    child: messengerController.inCallParticipants[1]["isVideoStreaming"]
+                                    child: messengerController.joinedParticipants[1]["isVideoStreaming"]
                                         ? RTCVideoView(
-                                            messengerController.inCallParticipants[1]["remoteRenderer"],
+                                            messengerController.joinedParticipants[1]["remoteRenderer"],
                                             objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                                           )
                                         : Container(
@@ -220,7 +218,7 @@ class GroupCallScreen extends StatelessWidget {
                                                   ),
                                                   child: ClipOval(
                                                     child: Image.network(
-                                                      messengerController.inCallParticipants[1]["userImage"].toString(),
+                                                      messengerController.joinedParticipants[1]["userImage"].toString(),
                                                       fit: BoxFit.cover,
                                                       filterQuality: FilterQuality.high,
                                                       errorBuilder: (context, error, stackTrace) => imageErrorBuilderCover(
@@ -235,7 +233,7 @@ class GroupCallScreen extends StatelessWidget {
                                                   ),
                                                 ),
                                                 kH20sizedBox,
-                                                Text(messengerController.inCallParticipants[1]["userName"]),
+                                                Text(messengerController.joinedParticipants[1]["userName"]),
                                               ],
                                             ),
                                           ),
@@ -292,7 +290,7 @@ class GroupCallScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                    if (messengerController.inCallParticipants.length > 2)
+                    if (messengerController.joinedParticipants.length > 2)
                       GridView.builder(
                         shrinkWrap: true,
                         padding: EdgeInsets.zero,
@@ -301,11 +299,11 @@ class GroupCallScreen extends StatelessWidget {
                           // mainAxisSpacing: 10,
                           // crossAxisSpacing: 10,
                           crossAxisCount: 2,
-                          childAspectRatio: messengerController.inCallParticipants.length == 3 ? width / (height - 40) : 1,
+                          childAspectRatio: messengerController.joinedParticipants.length == 3 ? width / (height - 40) : 1,
                         ),
-                        itemCount: messengerController.inCallParticipants.length + 1,
+                        itemCount: messengerController.joinedParticipants.length + 1,
                         itemBuilder: (context, index) {
-                          if (index == messengerController.inCallParticipants.length) {
+                          if (index == messengerController.joinedParticipants.length) {
                             return messengerController.isLocalFeedStreaming.value
                                 ? RTCVideoView(
                                     messengerController.localRenderer,
@@ -351,9 +349,9 @@ class GroupCallScreen extends StatelessWidget {
                                     ),
                                   );
                           } else {
-                            return messengerController.inCallParticipants[index]["isVideoStreaming"]
+                            return messengerController.joinedParticipants[index]["isVideoStreaming"]
                                 ? RTCVideoView(
-                                    messengerController.inCallParticipants[index]["remoteRenderer"],
+                                    messengerController.joinedParticipants[index]["remoteRenderer"],
                                     objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                                   )
                                 : Padding(
@@ -377,7 +375,7 @@ class GroupCallScreen extends StatelessWidget {
                                             ),
                                             child: ClipOval(
                                               child: Image.network(
-                                                messengerController.inCallParticipants[index]["userImage"].toString(),
+                                                messengerController.joinedParticipants[index]["userImage"].toString(),
                                                 fit: BoxFit.cover,
                                                 filterQuality: FilterQuality.high,
                                                 errorBuilder: (context, error, stackTrace) => imageErrorBuilderCover(
@@ -392,7 +390,7 @@ class GroupCallScreen extends StatelessWidget {
                                             ),
                                           ),
                                           kH20sizedBox,
-                                          Text(messengerController.inCallParticipants[index]["userName"]),
+                                          Text(messengerController.joinedParticipants[index]["userName"]),
                                         ],
                                       ),
                                     ),
@@ -407,10 +405,9 @@ class GroupCallScreen extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 40),
                           child: Row(
-                            mainAxisAlignment:
-                                messengerController.callState.value == CallStatus.inCAll.name ? MainAxisAlignment.spaceBetween : MainAxisAlignment.center,
+                            mainAxisAlignment: messengerController.joinedParticipants.isNotEmpty ? MainAxisAlignment.spaceBetween : MainAxisAlignment.center,
                             children: [
-                              if (messengerController.callState.value == CallStatus.inCAll.name)
+                              if (messengerController.joinedParticipants.isNotEmpty)
                                 InkWell(
                                   onTap: () async {
                                     await messengerController.goToAddMemberToCall(context);
@@ -427,7 +424,7 @@ class GroupCallScreen extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                              if (messengerController.callState.value == CallStatus.inCAll.name)
+                              if (messengerController.joinedParticipants.isNotEmpty)
                                 InkWell(
                                   onTap: () async {
                                     if (messengerController.isAudioCallState.value) {
@@ -448,7 +445,7 @@ class GroupCallScreen extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                              if (messengerController.callState.value == CallStatus.inCAll.name)
+                              if (messengerController.joinedParticipants.isNotEmpty)
                                 InkWell(
                                   onTap: () {
                                     MessengerHelper().switchCamera();
@@ -465,7 +462,7 @@ class GroupCallScreen extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                              if (messengerController.callState.value == CallStatus.inCAll.name)
+                              if (messengerController.joinedParticipants.isNotEmpty)
                                 InkWell(
                                   onTap: () {
                                     MessengerHelper().toggleMuteAudio();

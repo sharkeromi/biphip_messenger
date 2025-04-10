@@ -28,10 +28,10 @@ class CallScreen extends StatelessWidget {
                       mirror: true,
                       objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                     ),
-                  if (messengerController.callState.value == CallStatus.inCAll.name && messengerController.inCallParticipants.isNotEmpty)
-                    messengerController.inCallParticipants[0]["isVideoStreaming"]
+                  if (messengerController.callState.value == CallStatus.inCAll.name && messengerController.callParticipants.isNotEmpty)
+                    messengerController.callParticipants[0]["isVideoStreaming"]
                         ? RTCVideoView(
-                            messengerController.inCallParticipants[0]["remoteRenderer"],
+                            messengerController.callParticipants[0]["remoteRenderer"],
                             objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                           )
                         : SizedBox(
@@ -40,7 +40,7 @@ class CallScreen extends StatelessWidget {
                           ),
                   if (messengerController.callState.value == CallStatus.ringing.name ||
                       (messengerController.callState.value == CallStatus.inCAll.name &&
-                          (messengerController.inCallParticipants.isNotEmpty && !messengerController.inCallParticipants[0]["isVideoStreaming"])))
+                          (messengerController.callParticipants.isNotEmpty && !messengerController.callParticipants[0]["isVideoStreaming"])))
                     Positioned(
                       top: 100,
                       child: SizedBox(
