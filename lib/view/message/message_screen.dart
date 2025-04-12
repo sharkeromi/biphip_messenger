@@ -189,11 +189,20 @@ class MessageScreen extends StatelessWidget {
                                                     : null,
                                                 text: messages.text.toString(),
                                                 isSender: messages.senderId == Get.find<GlobalController>().userId.value ? true : false,
-                                                color: messages.senderId == Get.find<GlobalController>().userId.value ? cPrimaryColor : cNeutralColor,
+                                                color: messages.text.toString() != "\u2764\uFE0F"
+                                                    ? messages.senderId == Get.find<GlobalController>().userId.value
+                                                        ? cPrimaryColor
+                                                        : cNeutralColor
+                                                    : cWhiteColor,
                                                 tail: false,
-                                                textStyle: regular16TextStyle(
-                                                  messages.senderId == Get.find<GlobalController>().userId.value ? cWhiteColor : cBlackColor,
-                                                ),
+                                                isEmoji: messages.text.toString() == "\u2764\uFE0F",
+                                                textStyle: messages.text.toString() != "\u2764\uFE0F"
+                                                    ? regular16TextStyle(
+                                                        messages.senderId == Get.find<GlobalController>().userId.value ? cWhiteColor : cBlackColor,
+                                                      )
+                                                    : regular20TextStyle(
+                                                        messages.senderId == Get.find<GlobalController>().userId.value ? cWhiteColor : cBlackColor,
+                                                      ).copyWith(fontSize: screenWiseSize(h28, 2)),
                                               );
                                       },
                                     ),

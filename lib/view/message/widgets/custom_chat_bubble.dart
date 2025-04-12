@@ -1,5 +1,3 @@
-
-
 import 'package:biphip_messenger/utils/constants/imports.dart';
 
 class CustomBubbleNormal extends StatelessWidget {
@@ -14,6 +12,7 @@ class CustomBubbleNormal extends StatelessWidget {
     this.sent = false,
     this.delivered = false,
     this.seen = false,
+    this.isEmoji = false,
     this.textStyle = const TextStyle(
       color: Colors.black87,
       fontSize: 16,
@@ -30,6 +29,7 @@ class CustomBubbleNormal extends StatelessWidget {
   final bool sent;
   final bool delivered;
   final bool seen;
+  final bool isEmoji;
   final TextStyle textStyle;
   final BoxConstraints? constraints;
 
@@ -125,7 +125,7 @@ class CustomBubbleNormal extends StatelessWidget {
                 child: Stack(
                   children: <Widget>[
                     Padding(
-                      padding: stateTick ? EdgeInsets.fromLTRB(12, 6, 28, 6) : EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                      padding: stateTick ? EdgeInsets.fromLTRB(12, 6, 28, 6) : EdgeInsets.symmetric(vertical: 6, horizontal: isEmoji?0:12),
                       child: Text(
                         text,
                         style: textStyle,
